@@ -51,7 +51,7 @@ export async function renderPublish(host) {
             : 'Студенты увидят правки сразу после публикации. Изменения на дату публиковать не нужно, они уже действуют.'}</p>
         </div>` : `
         <div class="stub stub-empty">
-          <div class="stub-arc">${emptyArc(110)}</div>
+          <div class="stub-arc">${emptyArc(110, 'done')}</div>
           <p class="stub-title">Всё опубликовано</p>
           <p>Правки из сетки появятся здесь и дойдут до студентов после публикации.</p>
         </div>`}

@@ -35,9 +35,29 @@ export function arc({ progress = null, size = 96, width = 4, spin = false, title
   </svg>`;
 }
 
-/** Крупная светлая дуга для пустых состояний. */
-export function emptyArc(size = 112) {
-  return arc({ progress: 0.72, size, width: 3 });
+/* Знак пустого состояния: два замкнутых кольца, как в логотипе, и
+   значок внутри. Раньше здесь была незакрашенная на четверть дуга — та же,
+   что у загрузки и прогресса пары, — и пустой день выглядел как зависшая
+   загрузка. Замкнутое кольцо не «грузится»: оно законченное.
+
+   glyph: 'rest' — месяц (пар нет, можно выдохнуть), 'done' — галочка
+   (всё сделано), 'none' — без значка. */
+const GLYPHS = {
+  rest: '<path d="M57 37a14 14 0 1 0 8 23 12 12 0 0 1-8-23z" fill="var(--line)"/>',
+  done: '<path d="M40 50.5l7.5 7.5L61 43" fill="none" stroke="var(--text-2)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>',
+  none: '',
+};
+
+/**
+ * @param {number} [size] сторона в px
+ * @param {'rest'|'done'|'none'} [glyph]
+ */
+export function emptyArc(size = 112, glyph = 'none') {
+  return `<svg class="empty-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" focusable="false">
+    <circle cx="50" cy="50" r="46" fill="none" stroke="var(--line-soft)" stroke-width="3"/>
+    <circle cx="50" cy="50" r="33" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    ${GLYPHS[glyph] || ''}
+  </svg>`;
 }
 
 /** Вращающаяся дуга — загрузка. */

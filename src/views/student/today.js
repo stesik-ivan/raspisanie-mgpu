@@ -34,11 +34,79 @@ export async function renderToday(host, { date = today() } = {}) {
 
   host.innerHTML = `
     <div class="page day-page" data-date="${date}">
-      ${header(date, who, prefs, changes.length, forTeacher)}
-      ${day.lessons.length ? feed(day, forTeacher) : empty(date)}
+      <div class="day-cols">
+        <section class="day-main">
+          ${header(date, who, prefs, changes.length, forTeacher)}
+          ${day.lessons.length ? feed(day, forTeacher) : empty(date)}
+        </section>
+        <aside class="day-aside" data-aside aria-label="Дальше по расписанию"></aside>
+      </div>
     </div>`;
 
   bind(host, date);
+  fillAside(host, subject, date, forTeacher);
+}
+
+/* Боковая колонка на широком экране: ближайший день с парами и
+   ближайшие изменения. На телефоне её нет — там день листается свайпом,
+   а изменения на своей вкладке. */
+async function fillAside(host, subject, date, forTeacher) {
+  const el = host.querySelector('[data-aside]');
+  if (!el) return;
+  try {
+    let next = null;
+    for (let i = 1; i <= 7 && !next; i++) {
+      const d = await api.getDay(subject, addDays(date, i));
+      if (d.lessons.length) next = d;
+    }
+    const upcoming = await api.getChanges(subject, { fromDate: today(), days: 14 });
+    if (!el.isConnected) return;   // пока считали, пользователь ушёл на другой день
+    el.innerHTML = `${nextDay(date, next, forTeacher)}${changesCard(upcoming, forTeacher)}`;
+  } catch (err) {
+    console.error('today: не собрал боковую колонку', err);
+    el.innerHTML = '';
+  }
+}
+
+function nextDay(date, day, forTeacher) {
+  if (!day) {
+    return `<section class="aside-card"><h2 class="aside-title">Неделя впереди</h2>
+      <p class="aside-empty">Ближайшие семь дней пар нет.</p></section>`;
+  }
+  const title = day.date === addDays(date, 1) ? 'Завтра' : 'Следующие пары';
+  return `
+    <section class="aside-card">
+      <h2 class="aside-title">${title} <span class="aside-date">${esc(longDate(day.date))}</span></h2>
+      <ul class="aside-list">${day.lessons.map(o => `
+        <li><button class="aside-row${o.status === 'cancelled' ? ' is-cancelled' : ''}" data-lesson="${esc(o.lessonId)}" data-ldate="${esc(o.date)}">
+          <span class="aside-time">${esc(o.start)}</span>
+          <span class="aside-body">
+            <span class="aside-name">${esc(o.discipline)}</span>
+            <span class="aside-meta">${esc(o.roomLabel)}${o.building ? `, ${esc(o.building.code)}` : ''} · ${forTeacher
+              ? esc(o.groups.map(g => g.code).join(' + ')) : esc(o.teachers.map(t => t.fio).join(', '))}</span>
+            ${o.changeIds.length ? `<span class="aside-note">${esc(changeNote(o))}</span>` : ''}
+          </span>
+        </button></li>`).join('')}
+      </ul>
+      <a class="link aside-more" href="#/today/${day.date}">Открыть день</a>
+    </section>`;
+}
+
+function changesCard(list, forTeacher) {
+  const top = list.slice(0, 3);
+  return `
+    <section class="aside-card">
+      <h2 class="aside-title">Изменения <span class="aside-date">на две недели</span></h2>
+      ${top.length ? `<ul class="aside-list">${top.map(o => `
+        <li><button class="aside-row" data-lesson="${esc(o.lessonId)}" data-ldate="${esc(o.date)}">
+          <span class="aside-time">${esc(shortDate(o.date))}</span>
+          <span class="aside-body">
+            <span class="aside-name">${esc(o.discipline)}</span>
+            <span class="aside-note">${esc(changeNote(o))}</span>
+          </span>
+        </button></li>`).join('')}</ul>` : '<p class="aside-empty">Изменений нет.</p>'}
+      ${!forTeacher && list.length > top.length ? `<a class="link aside-more" href="#/changes">Все изменения (${list.length})</a>` : ''}
+    </section>`;
 }
 
 function loading() {
@@ -138,7 +206,7 @@ function gapRow(gap) {
 function empty(date) {
   return `
     <div class="stub stub-empty">
-      <div class="stub-arc">${emptyArc(132)}</div>
+      <div class="stub-arc">${emptyArc(132, 'rest')}</div>
       <p class="stub-title">${date === today() ? 'Сегодня пар нет' : `${esc(shortDate(date))} пар нет`}</p>
       <p>Можно выдохнуть.</p>
     </div>`;

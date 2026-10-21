@@ -328,17 +328,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .lesson { grid-template-columns: 76px 1fr; padding: 16px 18px; }
   .lesson-start { font-size: 22px; }
 
-  .week-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
   .week-day { background: var(--surface); border-radius: var(--r-m); padding: 14px; }
   .week-row { background: none; padding: 10px 0; border-bottom: .5px solid var(--line-soft); border-radius: 0; }
   .week-row:last-child { border-bottom: 0; }
-  .dayline { max-width: 560px; }
   .chg-list, .card { max-width: 720px; }
 }
 
-@media (min-width: 1200px) {
-  .week-list { grid-template-columns: repeat(3, 1fr); }
-}
 
 /* ============ Аудитории (преподаватель) ============ */
 

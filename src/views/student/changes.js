@@ -59,7 +59,7 @@ function item(o) {
 
 function empty() {
   return `<div class="stub stub-empty">
-    <div class="stub-arc">${emptyArc(120)}</div>
+    <div class="stub-arc">${emptyArc(120, 'done')}</div>
     <p class="stub-title">Изменений нет</p>
     <p>Расписание на ближайшие две недели идёт как опубликовано.</p>
   </div>`;

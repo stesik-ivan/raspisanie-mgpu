@@ -222,7 +222,7 @@ input[type="date"], input[type="time"] {
 }
 /* Размер задаёт сам svg: экраны рисуют кольцо от 96 до 132px, и жёсткая
    коробка 96px давала наезд кольца на заголовок. */
-.stub-arc { display: flex; justify-content: center; margin: 0 auto 16px; opacity: .5; }
+.stub-arc { display: flex; justify-content: center; margin: 0 auto 16px; }
 
 /* ============ Уважение к настройкам движения ============ */
 

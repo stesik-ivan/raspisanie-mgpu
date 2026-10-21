@@ -1,5 +1,6 @@
 /* «Неделя»: полоса дней с точками, навигатор недель, список по дням.
-   От 900px — сетка дней × пар, как привыкли смотреть на бумаге. */
+   С 1100px вместо списка — сетка дней × пар (week-grid.js), как привыкли
+   смотреть на бумаге. В разметке есть оба вида, показывает нужный CSS. */
 
 import * as api from '../../data/api.js';
 import { emptyArc, spinner } from '../../ui/arc.js';
@@ -10,6 +11,7 @@ import { today } from '../../data/clock.js';
 import { addDays, startOfWeek, compareIso } from '../../domain/dates.js';
 import { openLessonSheet } from './lesson-sheet.js';
 import { listen } from '../../ui/listen.js';
+import { weekGridHtml } from './week-grid.js';
 
 export async function renderWeek(host, { date = today() } = {}) {
   host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
@@ -44,7 +46,9 @@ export async function renderWeek(host, { date = today() } = {}) {
       </ul>
 
       ${outOfTerm ? `<p class="notice">Эта неделя вне семестра. Семестр идёт с ${esc(dayMonth(meta.term.from))} по ${esc(dayMonth(meta.term.to))}.</p>` : ''}
-      ${week.days.some(d => d.lessons.length) ? list(week, forTeacher) : emptyWeek()}
+      ${week.days.some(d => d.lessons.length)
+        ? `<div class="week-as-list">${list(week, forTeacher)}</div><div class="week-as-grid">${weekGridHtml(week, forTeacher)}</div>`
+        : emptyWeek()}
     </div>`;
 
   bind(host, week.from);
@@ -85,7 +89,7 @@ function row(o, forTeacher) {
 
 function emptyWeek() {
   return `<div class="stub stub-empty">
-    <div class="stub-arc">${emptyArc(120)}</div>
+    <div class="stub-arc">${emptyArc(120, 'rest')}</div>
     <p class="stub-title">На этой неделе пар нет</p>
   </div>`;
 }
