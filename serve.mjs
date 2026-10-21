@@ -35,7 +35,10 @@ createServer(async (req, res) => {
     const buf = await readFile(file);
     res.writeHead(200, {
       'Content-Type': TYPES[extname(file)] || 'application/octet-stream',
-      'Cache-Control': 'no-cache',
+      // no-store, а не no-cache: без ETag и Last-Modified браузеру нечем
+      // перепроверить файл, и он вправе отдать вчерашний модуль. На
+      // локальном сервере это значит, что правки не видно до чистки кэша.
+      'Cache-Control': 'no-store, must-revalidate',
     });
     res.end(buf);
   } catch (err) {

@@ -120,11 +120,15 @@ function syncThemeColor() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  // По http с локального адреса (показ с ноутбука через serve.mjs) браузер
-  // service worker не регистрирует. Это ожидаемо, не ошибка: офлайн и
-  // установка на экран показываются только с HTTPS-ссылки.
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    console.info('main: service worker пропущен — нужен https или localhost');
+  /* Только по https.
+
+     По http с локального адреса (показ с ноутбука через serve.mjs) браузер
+     его и так не зарегистрирует — офлайн и установка на экран работают
+     только с HTTPS-ссылки. А на localhost он регистрируется, но при
+     разработке лишь мешает: отдаёт вчерашний JS и каждую правку приходится
+     выковыривать из кэша. */
+  if (location.protocol !== 'https:') {
+    console.info('main: service worker пропущен — нужен https');
     return;
   }
   navigator.serviceWorker.register('sw.js')
