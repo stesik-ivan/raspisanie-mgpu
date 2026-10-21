@@ -18,6 +18,7 @@ import { slotsOf, toMinutes } from '../domain/bells.js';
 import { addDays, weekdayOf, compareIso, startOfWeek } from '../domain/dates.js';
 import { today, now, nowMinutes } from './clock.js';
 import { decorator } from './decorate.js';
+import { describeAudit } from './audit-view.js';
 
 export * from './api-admin.js';
 export * from './api-changes.js';
@@ -283,18 +284,8 @@ export async function getAudit({ limit = 50 } = {}) {
   return st().audit.slice(0, limit).map(a => ({
     ...a,
     admin: st().admins.find(x => x.id === a.adminId) || null,
-    label: auditLabel(a),
+    ...describeAudit(a, st(), cx()),
   }));
-}
-
-/* Человеческая подпись объекта журнала: «Геология, ГОБЩ-261» вместо L8.
-   На показе спросят «а что это за L8», и ответить нечего. */
-function auditLabel(a) {
-  if (a.entity === 'Term') return '';
-  const l = st().lessons.find(x => x.id === a.entityId);
-  if (!l) return '';
-  const groups = l.groupIds.map(id => cx().groupOf(id)?.code).filter(Boolean).join(', ');
-  return [cx().disciplineName(l.disciplineId), groups].filter(Boolean).join(' · ');
 }
 
 export async function getMeta() {

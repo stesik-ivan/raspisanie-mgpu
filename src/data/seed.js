@@ -395,7 +395,9 @@ export function buildSeed({ today, groupCount = null } = {}) {
   const entities = ['Lesson', 'Lesson', 'Change', 'Term', 'Lesson', 'Lesson'];
   for (let i = 0; i < 18; i++) {
     const admin = state.admins[i % 2];
-    const day = addDays(t0, -(i % 7));
+    // От вчера до недели назад: журнал сида — прошлое, а правки на показе
+    // встают сверху, по времени.
+    const day = addDays(t0, -(i % 7) - 1);
     const hh = String(9 + (i % 8)).padStart(2, '0');
     const mm = String((i * 7) % 60).padStart(2, '0');
     state.audit.push({

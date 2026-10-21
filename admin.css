@@ -290,3 +290,10 @@
 .pub-block-title svg { width: 18px; height: 18px; color: var(--accent-text); }
 .pub-block .cf-list { margin-bottom: 8px; }
 @media (min-width: 900px) { .pub-list, .pub-foot, .pub-block { max-width: 980px; } }
+
+/* Журнал: фильтры и «было → стало» */
+.log-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.log-filters .chips-row { flex: 1 1 auto; min-width: 0; }
+.log-group { width: auto; min-width: 160px; flex: 0 0 auto; }
+.log-title { font-size: 14px; font-weight: var(--w-ui); margin-top: 2px; }
+.log-body .pub-diff { margin-top: 4px; }

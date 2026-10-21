@@ -171,6 +171,9 @@ test('12. в журнале 15–20 записей за последнюю не�
   const who = new Set(seed.audit.map(a => a.adminId));
   assert.equal(who.size, 2);
   for (const a of seed.audit) assert.ok(a.at >= '2026-10-14' && a.at <= '2026-10-21T23:59');
+  // Записи из сида — прошлое. Иначе «сегодня, 16:49» при демо-времени 10:45
+  // встаёт над правками, сделанными на показе.
+  for (const a of seed.audit) assert.ok(a.at < TODAY, `запись в будущем: ${a.at}`);
 });
 
 test('сид детерминирован: два вызова с одним today дают одинаковый результат', () => {
