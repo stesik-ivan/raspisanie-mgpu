@@ -23,16 +23,14 @@
    содержимого, а не к краю прокрутки, поэтому слева остаётся полоса
    отступа, а между строками — щели сетки. Ячейки, уезжая под колонку,
    просвечивали бы и там, и там. Тени цвета фона закрывают щели (2px со
-   всех сторон, 4px справа) и полосу отступа слева (до 32px), тонкая
-   линия отделяет колонку от ячеек. */
+   всех сторон, 4px справа) и полосу отступа слева (до 32px). */
 .g-time, .g-corner {
   position: sticky; left: 0; z-index: 3;
   background: var(--bg);
   box-shadow:
     0 0 0 2px var(--bg),
     4px 0 0 2px var(--bg),
-    -32px 0 0 2px var(--bg),
-    5px 0 0 2px var(--line-soft);
+    -32px 0 0 2px var(--bg);
 }
 .g-time {
   grid-column: 1;
@@ -49,15 +47,17 @@
   display: flex; align-items: center; justify-content: center;
   padding: 8px 10px; text-align: center;
 }
-.g-group { border-radius: var(--r-s) var(--r-s) 0 0; font-size: 14px; font-weight: var(--w-head); }
+/* Шапка — цельные скруглённые плашки: группа отдельно, подгруппы под
+   ней отдельно. Срезанные снизу углы выглядели обрезанными. */
+.g-group, .g-sub { border-radius: var(--r-s); }
+.g-group { font-size: 14px; font-weight: var(--w-head); }
 .g-sub { font-size: 11.5px; font-weight: var(--w-ui); color: var(--text-2); }
 .g-group.band-0, .g-sub.band-0 { background: var(--surface); }
 .g-group.band-1, .g-sub.band-1 { background: color-mix(in srgb, var(--line-soft) 65%, var(--surface)); }
 
 .g-day {
   grid-column: 1 / -1;
-  padding: 18px 0 6px;
-  border-bottom: 1px solid var(--line-soft);
+  padding: 20px 0 4px;
 }
 /* Подпись дня едет вместе с колонкой времени, а не уезжает влево. */
 .g-day-label {

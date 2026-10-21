@@ -3,7 +3,7 @@
    Нужно и правке занятий (api-admin.js), и изменениям на дату
    (api-changes.js). Экраны сюда не ходят: только через api.js. */
 
-import { occurrencesOf } from './ctx.js';
+import { occurrencesOf, withBookings } from './ctx.js';
 import { ApiError } from './errors.js';
 import { now, toIsoDate } from './clock.js';
 import { lessonOccurrences, applyChanges } from '../domain/occurrences.js';
@@ -46,7 +46,7 @@ export function candidateOccurrences(s, ctx, lesson) {
 }
 
 export function conflictsOf(s, ctx, lesson) {
-  const existing = occurrencesOf(s, { includeDraft: true });
+  const existing = withBookings(s, occurrencesOf(s, { includeDraft: true }));
   return checkLesson(candidateOccurrences(s, ctx, lesson), existing, ctx);
 }
 

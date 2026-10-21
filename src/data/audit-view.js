@@ -7,7 +7,7 @@
 
 import { diffLabels, lessonTitle } from './diff-labels.js';
 import { roomLabel } from './decorate.js';
-import { ru } from '../domain/dates.js';
+import { ru, ruleText } from '../domain/dates.js';
 import { plural } from '../ui/format.js';
 
 /**
@@ -22,9 +22,13 @@ export function describeAudit(a, s, ctx) {
 function lesson(a, s, ctx) {
   const l = a.after || a.before || s.lessons.find(x => x.id === a.entityId);
   const both = a.before && a.after && !a.after.deleted && !a.before.deleted;
+  // У создания и удаления разницы нет — показываем, на какие даты.
+  let details = both ? diffLabels(a.before, a.after, ctx).map(({ label, from, to }) => ({ label, from, to })) : [];
+  if (!a.before && a.after) details = [{ label: 'Новое', from: '', to: ruleText(a.after.dateRule) }];
+  if (a.before && (!a.after || a.after.deleted)) details = [{ label: 'Убрано', from: '', to: ruleText(a.before.dateRule) }];
   return {
     title: l ? lessonTitle(l, ctx) : '',
-    details: both ? diffLabels(a.before, a.after, ctx).map(({ label, from, to }) => ({ label, from, to })) : [],
+    details,
     note: '',
     groupIds: l?.groupIds || [],
   };

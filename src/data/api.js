@@ -10,7 +10,7 @@
 
 import { clearState } from './demo-store.js';
 import { buildSeed } from './seed.js';
-import { occurrencesOf } from './ctx.js';
+import { occurrencesOf, withBookings } from './ctx.js';
 import { ensure, getCtx, commit, replaceState, seedDay, tick } from './session.js';
 import { findConflicts, freeRooms, orientConflict } from '../domain/conflicts.js';
 import { buildIcs } from '../domain/ics.js';
@@ -23,6 +23,7 @@ import { describeAudit } from './audit-view.js';
 export * from './api-admin.js';
 export * from './api-changes.js';
 export * from './api-publish.js';
+export * from './api-bookings.js';
 
 /* Состояние живёт в session.js. Здесь к нему обращаются через st()/cx(),
    чтобы чтение и запись (api-admin.js) видели одно и то же. */
@@ -148,7 +149,7 @@ export async function getGridView({ unitId, course = null, weekFrom = today() })
     .sort((a, b) => a.course - b.course || a.code.localeCompare(b.code));
   const ids = new Set(groups.map(g => g.id));
 
-  const all = occurrencesOf(st(), { includeDraft: true });
+  const all = withBookings(st(), occurrencesOf(st(), { includeDraft: true }));
   const week = all.filter(o => compareIso(o.date, monday) >= 0 && compareIso(o.date, to) <= 0);
   const mine = week.filter(o => o.groupIds.some(g => ids.has(g)));
 
@@ -194,17 +195,21 @@ export async function getGridView({ unitId, course = null, weekFrom = today() })
 
 export async function getRoomBusy(roomId, date) {
   await tick();
-  return occurrencesOf(st(), {})
+  return withBookings(st(), occurrencesOf(st(), {}))
     .filter(o => o.roomId === roomId && o.date === date)
     .sort((a, b) => a.start.localeCompare(b.start))
-    .map(decorate);
+    // Бронь — не пара: вместо дисциплины «Бронь», вместо преподавателей — кто занял.
+    .map(o => o.bookedBy
+      ? { ...decorate(o), discipline: 'Бронь', teachers: [cx().teacherOf(o.bookedBy)].filter(Boolean)
+          .map(t => ({ id: t.id, fio: t.fio, position: t.position })) }
+      : decorate(o));
 }
 
 export async function getFreeRoomsNow({ buildingId = null, kind = null } = {}) {
   await tick();
   const date = today();
   const m = nowMinutes();
-  const all = occurrencesOf(st(), {});
+  const all = withBookings(st(), occurrencesOf(st(), {}));
   const rooms = freeRooms(all, cx(), {
     date, start: pad(m), end: pad(m + 1), buildingId, kind,
   });
@@ -232,7 +237,7 @@ function nextBusy(all, roomId, date, m) {
 /** Свободные аудитории на произвольный интервал — для разбора конфликта. */
 export async function getFreeRoomsAt({ date, start, end, buildingId = null, kind = null }) {
   await tick();
-  return freeRooms(occurrencesOf(st(), { includeDraft: true }), cx(),
+  return freeRooms(withBookings(st(), occurrencesOf(st(), { includeDraft: true })), cx(),
     { date, start, end, buildingId, kind });
 }
 

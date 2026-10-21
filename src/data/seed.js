@@ -14,6 +14,7 @@
 import { addDays, weekdayOf, compareIso } from '../domain/dates.js';
 import { toMinutes, slotTime } from '../domain/bells.js';
 import { BELLS_VO, BELLS_SPO, TERM, HOLIDAYS } from '../domain/fixtures.js';
+import { buildSeedAudit } from './seed-audit.js';
 import { UNITS, PROGRAMS, GROUPS, BUILDINGS, ROOMS, TEACHERS, ADMINS, DISCIPLINES } from './seed-data.js';
 import { STATE_VERSION } from './demo-store.js';
 
@@ -111,6 +112,7 @@ export function buildSeed({ today, groupCount = null } = {}) {
     lessons: [],
     changes: [],
     audit: [],
+    bookings: [],
     prefs: { role: null, unitId: null, groupId: null, subgroup: null, teacherId: null, adminId: null, theme: 'auto', onboarded: false },
     ephemeral: false,
   };
@@ -391,23 +393,8 @@ export function buildSeed({ today, groupCount = null } = {}) {
 
   /* ---------- 12. Журнал ---------- */
 
-  const actions = ['create', 'update', 'update', 'publish', 'update', 'delete'];
-  const entities = ['Lesson', 'Lesson', 'Change', 'Term', 'Lesson', 'Lesson'];
-  for (let i = 0; i < 18; i++) {
-    const admin = state.admins[i % 2];
-    // От вчера до недели назад: журнал сида — прошлое, а правки на показе
-    // встают сверху, по времени.
-    const day = addDays(t0, -(i % 7) - 1);
-    const hh = String(9 + (i % 8)).padStart(2, '0');
-    const mm = String((i * 7) % 60).padStart(2, '0');
-    state.audit.push({
-      id: `AU${i + 1}`, at: `${day}T${hh}:${mm}`, adminId: admin.id,
-      entity: entities[i % entities.length], entityId: state.lessons[i % state.lessons.length]?.id || 'L1',
-      action: actions[i % actions.length],
-      before: null, after: null,
-    });
-  }
-  state.audit.sort((a, b) => b.at.localeCompare(a.at));
+  state.audit = buildSeedAudit(state, { t0, unitOf, teacherPool });
+
 
   return state;
 }

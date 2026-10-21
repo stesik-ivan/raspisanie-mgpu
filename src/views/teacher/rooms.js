@@ -1,7 +1,8 @@
 /* «Аудитории»: что свободно прямо сейчас, по корпусам и типам.
 
    Вопрос, который преподаватель задаёт чаще всего и на который сейчас
-   нет ответа нигде: «куда можно сесть с группой в ближайший час». */
+   нет ответа нигде: «куда можно сесть с группой в ближайший час».
+   Свободную аудиторию можно сразу занять (room-book.js). */
 
 import * as api from '../../data/api.js';
 import { emptyArc, spinner } from '../../ui/arc.js';
@@ -10,7 +11,7 @@ import { esc } from '../../ui/search.js';
 import { longDate, durationShort, plural } from '../../ui/format.js';
 import { today, now, nowMinutes } from '../../data/clock.js';
 import { toMinutes } from '../../domain/bells.js';
-import { openRoomSheet } from '../student/peek.js';
+import { openRoomBooking, release } from './room-book.js';
 import { listen } from '../../ui/listen.js';
 
 const KINDS = [
@@ -26,7 +27,7 @@ let filter = { buildingId: null, kind: null };
 export async function renderRooms(host) {
   host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
 
-  const [index, free] = await Promise.all([api.getIndex(), api.getFreeRoomsNow(filter)]);
+  const [index, free, mine] = await Promise.all([api.getIndex(), api.getFreeRoomsNow(filter), api.getMyBookings()]);
   const buildings = index.buildings.filter(b => !b.demo || true);
   const m = nowMinutes();
   const clock = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -44,6 +45,18 @@ export async function renderRooms(host) {
         <h1 class="page-title">Свободно сейчас</h1>
         <p class="page-sub">${esc(longDate(today()))}, ${esc(clock)} · ${free.length} ${freePlural(free.length)}</p>
       </header>
+
+      ${mine.length ? `
+        <section class="rooms-sect my-bookings">
+          <h2 class="rooms-head">Мои брони</h2>
+          <ul class="book-list">${mine.map(b => `
+            <li class="book-item">
+              <span class="book-room">${esc(b.roomLabel)}${b.building ? `<span class="sh-dim">, ${esc(b.building.code)}</span>` : ''}</span>
+              <span class="book-time">до ${esc(b.end)}</span>
+              <button class="btn btn-ghost book-free" data-release="${esc(b.id)}">Освободить</button>
+            </li>`).join('')}
+          </ul>
+        </section>` : ''}
 
       <div class="filters">
         <div class="chips-row" role="group" aria-label="Корпус">
@@ -84,9 +97,18 @@ export async function renderRooms(host) {
     if (b) { filter.buildingId = b.dataset.b || null; return renderRooms(host); }
     const k = e.target.closest('[data-k]');
     if (k) { filter.kind = k.dataset.k || null; return renderRooms(host); }
+    const rel = e.target.closest('[data-release]');
+    if (rel) { release(rel.dataset.release, () => renderRooms(host)); return; }
     const r = e.target.closest('[data-room]');
-    if (r) openRoomSheet(r.dataset.room, today());
+    if (r) {
+      const room = free.find(x => x.id === r.dataset.room);
+      if (room) openRoomBooking(room, { label: `${kindPrefix(room.kind)} ${room.name}`, onChanged: () => renderRooms(host) });
+    }
   });
+}
+
+function kindPrefix(kind) {
+  return { comp: 'Комп. класс', lab: 'Лаб.', gym: 'Зал' }[kind] || 'Ауд.';
 }
 
 function kindLabel(kind) {

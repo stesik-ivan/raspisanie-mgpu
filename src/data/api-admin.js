@@ -10,7 +10,7 @@
    Реэкспортируется из api.js — для экранов точка входа одна. */
 
 import { ensure, getCtx, commit, tick } from './session.js';
-import { occurrencesOf } from './ctx.js';
+import { occurrencesOf, withBookings } from './ctx.js';
 import { ApiError } from './errors.js';
 import { today } from './clock.js';
 import {
@@ -47,7 +47,7 @@ export async function getRoomOptions(lessonId) {
   if (!lesson) return [];
   const room = ctx.roomOf(lesson.roomId);
   if (!room || room.kind === 'online') return [];
-  return freeRoomsForAll(candidateOccurrences(s, ctx, lesson), occurrencesOf(s, { includeDraft: true }), ctx,
+  return freeRoomsForAll(candidateOccurrences(s, ctx, lesson), withBookings(s, occurrencesOf(s, { includeDraft: true })), ctx,
     { buildingId: room.buildingId, kind: room.kind })
     .filter(r => r.id !== lesson.roomId)
     .map(r => ({ id: r.id, name: r.name, kind: r.kind, buildingId: r.buildingId }));
@@ -218,7 +218,7 @@ export async function checkLessonDraft(draft, { lessonId = null } = {}) {
   const { occurrences, warnings } = lessonOccurrences(lesson, ctx);
   const problems = problemsOf(s, ctx, lesson);
   const cand = applyChanges(occurrences, s.changes.filter(c => c.lessonId === lesson.id), ctx);
-  const existing = occurrencesOf(s, { includeDraft: true });
+  const existing = withBookings(s, occurrencesOf(s, { includeDraft: true }));
   const conflicts = groupConflicts(checkLesson(cand, existing, ctx), { from: today() });
 
   let freeRooms = [];

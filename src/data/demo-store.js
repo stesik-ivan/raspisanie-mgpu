@@ -17,7 +17,7 @@ const KEY = 'mgpu-raspisanie-v1';
 
 const ARRAYS = ['units', 'programs', 'groups', 'buildings', 'rooms', 'teachers',
                 'disciplines', 'bellSchedules', 'terms', 'lessons', 'changes',
-                'audit', 'admins'];
+                'audit', 'admins', 'bookings'];
 
 const THEMES = ['auto', 'light', 'dark'];
 

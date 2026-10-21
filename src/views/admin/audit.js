@@ -53,7 +53,7 @@ export async function renderAudit(host) {
       </div>
 
       ${shown.length ? `
-        <div class="log-head" aria-hidden="true"><span>Когда</span><span>Кто</span><span>Что</span><span>Было → стало</span></div>
+        <div class="log-head" aria-hidden="true"><span>Когда</span><span>Кто</span><span>Что</span><span>Что изменилось</span></div>
         <ul class="log">${shown.map(row).join('')}</ul>` : `
         <div class="stub stub-empty">
           <div class="stub-arc">${emptyArc(110)}</div>

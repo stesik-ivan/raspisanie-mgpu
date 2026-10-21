@@ -191,6 +191,9 @@ input[type="date"], input[type="time"] {
   left: 50%; bottom: calc(80px + var(--safe-b));
   transform: translate(-50%, 12px);
   display: flex; align-items: center; gap: 12px;
+  /* width: max-content обязателен: при left: 50% браузер ужимает блок до
+     половины экрана, и длинный тост на телефоне ломался по слову в строку. */
+  width: max-content;
   max-width: calc(100vw - 32px);
   padding: 12px 16px;
   border-radius: var(--r-l);

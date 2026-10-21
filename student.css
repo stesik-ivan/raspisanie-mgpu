@@ -375,3 +375,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .rooms-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); max-width: 980px; }
   .filters { max-width: 980px; }
 }
+
+/* Брони преподавателя */
+.book-list { display: flex; flex-direction: column; gap: 6px; }
+.book-item {
+  display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px;
+  border-radius: var(--r-m); background: var(--surface); box-shadow: inset 3px 0 0 var(--accent);
+}
+.book-room { font-size: 16px; font-weight: var(--w-head); }
+.book-time { font-size: 14px; color: var(--text-2); font-variant-numeric: tabular-nums; margin-right: auto; }
+.book-pick { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.book-note { font-size: 11px; font-weight: var(--w-ui); color: var(--text-2); }

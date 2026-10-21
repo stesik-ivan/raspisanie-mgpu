@@ -55,8 +55,8 @@ export async function openRoomSheet(roomId, date = today()) {
           <li class="peek-row${o.status === 'cancelled' ? ' is-cancelled' : ''}">
             <span class="peek-when">${esc(o.start)}<br><span class="sh-dim">${esc(o.end)}</span></span>
             <span class="peek-body">
-              <span class="peek-name">${esc(o.discipline)} <span class="sh-dim">${esc(kindName(o.kind))}</span></span>
-              <span class="sh-dim">${o.groups.map(g => esc(g.code)).join(' + ')} · ${o.teachers.map(t => esc(t.fio)).join(', ')}</span>
+              <span class="peek-name">${esc(o.discipline)}${o.kind !== 'бронь' ? ` <span class="sh-dim">${esc(kindName(o.kind))}</span>` : ''}</span>
+              <span class="sh-dim">${[o.groups.map(g => esc(g.code)).join(' + '), o.teachers.map(t => esc(t.fio)).join(', ')].filter(Boolean).join(' · ')}</span>
             </span>
           </li>`).join('')}</ul>` : '<p class="sh-empty">В этот день аудитория свободна весь день</p>'}`,
     });

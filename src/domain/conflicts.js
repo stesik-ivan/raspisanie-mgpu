@@ -145,6 +145,11 @@ function mk(level, type, date, a, b, message) {
    рядом с правилом, а не собираются по кусочкам в интерфейсе. ---------- */
 
 function roomMessage(a, b, ctx) {
+  // Бронь преподавателя: групп и дисциплины у неё нет, есть кто и до скольки.
+  if (b.bookedBy) {
+    return `${roomLabel(a.roomId, ctx)} ${ru(a.date)} в ${a.start}–${a.end} занята: ` +
+      `аудиторию забронировал ${teacherName(b.bookedBy, ctx)} до ${b.end}.`;
+  }
   return `${roomLabel(a.roomId, ctx)} ${ru(a.date)} в ${a.start}–${a.end} занята: ` +
     `${groupList(b, ctx)}, ${discipline(b, ctx)} (${b.kind}) в ${b.start}–${b.end}.`;
 }

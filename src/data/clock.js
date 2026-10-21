@@ -86,6 +86,14 @@ export function nowMinutes() {
   return toMinutesOfDay(now());
 }
 
+/** Только для тестов: заморозить время, как ?now= в браузере. */
+export function freezeClockForTests(iso) {
+  const ok = parseNowParam(iso);
+  if (!ok) throw new Error(`freezeClockForTests: не время: ${iso}`);
+  initialised = true;
+  frozen = new Date(ok.length === 10 ? `${ok}T00:00:00` : ok);
+}
+
 /** Только для тестов и кнопки «Сбросить демо-данные». */
 export function resetClock() {
   initialised = false;

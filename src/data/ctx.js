@@ -6,6 +6,7 @@
 
 import { lessonOccurrences, applyChanges } from '../domain/occurrences.js';
 import { publishedLessons, workingLessons } from '../domain/drafts.js';
+import { bookingOccurrences } from '../domain/bookings.js';
 
 /** Контекст для функций домена. */
 export function domainCtx(state) {
@@ -80,10 +81,18 @@ function matchesExtra(c, q) {
   return true;
 }
 
-/** Вхождения рабочих копий занятий без изменений на дату — основа для проверки нового изменения. */
+/** Вхождения рабочих копий занятий без изменений на дату — основа для проверки
+    нового изменения. Брони аудиторий тоже здесь: перенос в занятую бронью
+    аудиторию — такой же конфликт. */
 export function rawOccurrencesOf(state) {
   const ctx = domainCtx(state);
-  return workingLessons(state.lessons).flatMap(l => lessonOccurrences(l, ctx).occurrences);
+  return withBookings(state, workingLessons(state.lessons).flatMap(l => lessonOccurrences(l, ctx).occurrences));
+}
+
+/** Занятость аудиторий: вхождения плюс брони преподавателей. Только для
+    проверок аудиторий — в расписание групп и преподавателей брони не идут. */
+export function withBookings(state, occurrences) {
+  return [...occurrences, ...bookingOccurrences(state.bookings || [])];
 }
 
 /** Все вхождения подразделения — для сетки админа и поиска свободных аудиторий. */

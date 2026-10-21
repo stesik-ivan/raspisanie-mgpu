@@ -60,3 +60,28 @@ test('записи из сида без «до/после» по-прежнем�
   assert.ok(list.filter(e => e.entity === 'Lesson').every(e => e.title));
   assert.ok(list.every(e => Array.isArray(e.details)));
 });
+
+/* Пустой столбец «что изменилось» на показе вызвал вопрос «а это что».
+   У каждой записи из сида должно быть и название, и суть правки. */
+test('каждая запись журнала из сида говорит, о чём она и что изменилось', async () => {
+  const list = await api.getAudit({ limit: 100 });
+  assert.ok(list.length >= 15);
+  for (const e of list) {
+    assert.ok(e.title, `нет названия у ${e.id}`);
+    assert.ok(e.details.length, `пустое «что изменилось» у ${e.id} (${e.entity} ${e.action})`);
+  }
+});
+
+test('записи журнала из сида — в зоне своего администратора', async () => {
+  const index = await api.getIndex();
+  const unitOf = new Map(index.units.flatMap(u => u.groups.map(g => [g.id, u.id])));
+  const zones = { 'a-iest': ['u-iest', 'u-ico', 'u-iiya'], 'a-ispo': ['u-ispo'] };
+  for (const e of await api.getAudit({ limit: 100 })) {
+    for (const g of e.groupIds) assert.ok(zones[e.adminId].includes(unitOf.get(g)), `${e.id}: ${g} не в зоне ${e.adminId}`);
+  }
+});
+
+test('в журнале сида одно изменение на дату не повторяется', async () => {
+  const ids = (await api.getAudit({ limit: 100 })).filter(e => e.entity === 'Change').map(e => e.entityId);
+  assert.equal(new Set(ids).size, ids.length);
+});
