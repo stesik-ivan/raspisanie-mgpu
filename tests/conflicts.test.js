@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  findConflicts, freeRooms, subgroupsOverlap, TRAVEL_MIN_GAP,
+  findConflicts, freeRooms, freeRoomsForAll, subgroupsOverlap, TRAVEL_MIN_GAP,
 } from '../src/domain/conflicts.js';
 
 const ROOMS = [
@@ -246,4 +246,29 @@ test('вхождение без аудитории не конфликтует �
     occ({ start: '10:30', end: '11:50', roomId: null, groupIds: ['g-a'], teacherIds: ['t2'] }),
   ];
   assert.equal(errors(list, 'room').length, 0);
+});
+
+/* Замена аудитории в один тап меняет её во всём занятии, а не на одну дату.
+   Значит, предлагать можно только те, что свободны на ВСЕХ его датах. */
+test('freeRoomsForAll: аудитория занята хотя бы на одной дате занятия — не предлагается', () => {
+  const cand = [
+    occ({ lessonId: 'X', date: '2026-10-14', start: '10:30', end: '11:50', roomId: 'r307' }),
+    occ({ lessonId: 'X', date: '2026-10-21', start: '10:30', end: '11:50', roomId: 'r307' }),
+  ];
+  const existing = [
+    occ({ date: '2026-10-21', start: '10:40', end: '11:25', roomId: 'r215', groupIds: ['g-spo'], teacherIds: ['t9'] }),
+    occ({ date: '2026-10-28', start: '10:40', end: '11:25', roomId: 'r103', groupIds: ['g-spo'], teacherIds: ['t9'] }),
+  ];
+  const free = freeRoomsForAll(cand, existing, ctx, { buildingId: 'ch1', kind: 'comp' });
+  assert.deepEqual(free.map(r => r.id).sort(), ['r103', 'r307']);
+});
+
+test('freeRoomsForAll не считает занятостью само проверяемое занятие и отменённые', () => {
+  const cand = [occ({ lessonId: 'X', date: '2026-10-14', start: '10:30', end: '11:50', roomId: 'r307' })];
+  const existing = [
+    ...cand,
+    occ({ date: '2026-10-14', start: '10:30', end: '11:50', roomId: 'r215', status: 'cancelled' }),
+  ];
+  const free = freeRoomsForAll(cand, existing, ctx, { buildingId: 'ch1', kind: 'comp' });
+  assert.deepEqual(free.map(r => r.id).sort(), ['r103', 'r215', 'r307']);
 });

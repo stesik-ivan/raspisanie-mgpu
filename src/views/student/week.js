@@ -9,6 +9,7 @@ import { rangeLabel, dowShort, dayMonth, kindName } from '../../ui/format.js';
 import { today } from '../../data/clock.js';
 import { addDays, startOfWeek, compareIso } from '../../domain/dates.js';
 import { openLessonSheet } from './lesson-sheet.js';
+import { listen } from '../../ui/listen.js';
 
 export async function renderWeek(host, { date = today() } = {}) {
   host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
@@ -89,7 +90,7 @@ function emptyWeek() {
 }
 
 function bind(host, from) {
-  host.addEventListener('click', (e) => {
+  listen(host, 'click', (e) => {
     const w = e.target.closest('[data-week]');
     if (w) {
       const v = w.dataset.week;

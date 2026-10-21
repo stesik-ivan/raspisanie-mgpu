@@ -15,3 +15,15 @@ export function humanError(e) {
   if (/storage|localstorage/i.test(m)) return 'Браузер не разрешает сохранять данные';
   return m || 'Что-то пошло не так';
 }
+
+/** Отказ api, который надо показать человеку как есть.
+    code: 'foreign' — чужое подразделение, 'stale' — запись уже изменили,
+    'conflict' — правка даёт конфликт-ошибку, 'missing' — записи нет. */
+export class ApiError extends Error {
+  constructor(code, message, extra = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    Object.assign(this, extra);
+  }
+}

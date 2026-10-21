@@ -13,6 +13,7 @@ import { today, nowMinutes, isDemoTime } from '../../data/clock.js';
 import { addDays } from '../../domain/dates.js';
 import { toMinutes } from '../../domain/bells.js';
 import { openLessonSheet } from './lesson-sheet.js';
+import { listen } from '../../ui/listen.js';
 
 export async function renderToday(host, { date = today() } = {}) {
   host.innerHTML = `<div class="page">${loading()}</div>`;
@@ -152,7 +153,7 @@ function empty(date) {
 }
 
 function bind(host, date) {
-  host.addEventListener('click', (e) => {
+  listen(host, 'click', (e) => {
     const nav = e.target.closest('[data-day]');
     if (nav) {
       const v = nav.dataset.day;
@@ -163,7 +164,7 @@ function bind(host, date) {
     if (card) openLessonSheet(card.dataset.lesson, card.dataset.ldate);
   });
 
-  host.addEventListener('keydown', (e) => {
+  listen(host, 'keydown', (e) => {
     const card = e.target.closest('[data-lesson]');
     if (card && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();

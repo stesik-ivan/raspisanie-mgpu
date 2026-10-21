@@ -7,6 +7,7 @@ import { toast } from '../../ui/toast.js';
 import { openSheet, closeSheet } from '../../ui/sheet.js';
 import { stamp, dayMonth } from '../../ui/format.js';
 import { isDemoTime } from '../../data/clock.js';
+import { listen } from '../../ui/listen.js';
 
 export async function renderMore(host) {
   const [prefs, meta, index, ephemeral] = await Promise.all([
@@ -90,7 +91,7 @@ export async function renderMore(host) {
 }
 
 function bind(host) {
-  host.addEventListener('click', async (e) => {
+  listen(host, 'click', async (e) => {
     const theme = e.target.closest('[data-theme]');
     if (theme) {
       await api.setPrefs({ theme: theme.dataset.theme });

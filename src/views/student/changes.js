@@ -6,6 +6,7 @@ import { esc } from '../../ui/search.js';
 import { longDate, shortDate, kindName, stamp } from '../../ui/format.js';
 import { today } from '../../data/clock.js';
 import { openLessonSheet } from './lesson-sheet.js';
+import { listen } from '../../ui/listen.js';
 
 const TITLES = {
   cancel: 'Отменено', teacher: 'Замена преподавателя',
@@ -29,7 +30,7 @@ export async function renderChanges(host) {
       ${list.length ? `<ul class="chg-list">${list.map(item).join('')}</ul>` : empty()}
     </div>`;
 
-  host.addEventListener('click', (e) => {
+  listen(host, 'click', (e) => {
     const t = e.target.closest('[data-lesson]');
     if (t) openLessonSheet(t.dataset.lesson, t.dataset.ldate);
   });

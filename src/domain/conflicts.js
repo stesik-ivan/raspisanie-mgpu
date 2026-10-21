@@ -205,6 +205,34 @@ export function freeRooms(occurrences, ctx, q) {
 }
 
 /**
+ * Аудитории, свободные на ВСЕХ вхождениях занятия.
+ *
+ * Аудитория меняется у занятия целиком, а не на одну дату. Конфликт
+ * обычно недельный, и аудитория, свободная в эту среду и занятая в
+ * следующую, решила бы его на один раз и родила бы новый.
+ *
+ * @param {object[]} candidateOccurrences вхождения занятия, которому ищем место
+ * @param {object[]} existing все вхождения (само занятие среди них не мешает)
+ * @param {{buildingId?:string, kind?:string}} q
+ */
+export function freeRoomsForAll(candidateOccurrences, existing, ctx, q = {}) {
+  const ids = new Set((candidateOccurrences || []).map(o => o.lessonId));
+  const busy = new Set();
+  for (const o of existing || []) {
+    if (!o || o.status === 'cancelled' || ids.has(o.lessonId) || !o.roomId) continue;
+    if ((candidateOccurrences || []).some(c => c.date === o.date && c.status !== 'cancelled' && overlaps(c, o))) {
+      busy.add(o.roomId);
+    }
+  }
+  return (ctx.rooms || []).filter(r =>
+    r.kind !== 'online' &&
+    !busy.has(r.id) &&
+    (!q.buildingId || r.buildingId === q.buildingId) &&
+    (!q.kind || r.kind === q.kind)
+  );
+}
+
+/**
  * Проверка одного занятия против уже существующих — для формы ввода.
  * @param {object[]} candidateOccurrences вхождения проверяемого занятия
  * @param {object[]} existing вхождения всего остального

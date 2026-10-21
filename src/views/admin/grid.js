@@ -5,7 +5,7 @@
    потому что пара ВО и урок СПО стоят под разными номерами, а пересекаются
    по времени.
 
-   В демо сетка только на просмотр: форма ввода — следующий этап. */
+   Тап по ячейке открывает разбор: там конфликт решается в один тап. */
 
 import * as api from '../../data/api.js';
 import { spinner, emptyArc } from '../../ui/arc.js';
@@ -15,18 +15,27 @@ import { rangeLabel, dowFull, dayMonth, kindName, shortDate } from '../../ui/for
 import { today } from '../../data/clock.js';
 import { addDays, startOfWeek, weekdayOf } from '../../domain/dates.js';
 import { openConflictSheet } from './conflict-sheet.js';
+import { listen } from '../../ui/listen.js';
 
 const DAYS = [1, 2, 3, 4, 5, 6];
 
 let state = { unitId: null, course: null, weekFrom: null };
 
-export async function renderGrid(host) {
-  host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
+/**
+ * @param {HTMLElement} host
+ * @param {{quiet?:boolean}} [o] quiet — перерисовать без индикатора загрузки,
+ *   после правки: иначе страница схлопнется до спиннера и потеряет прокрутку.
+ */
+export async function renderGrid(host, { quiet = false } = {}) {
+  const scrollLeft = host.querySelector('.g-wrap')?.scrollLeft || 0;
+  if (!quiet) host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
 
   const [index, prefs] = await Promise.all([api.getIndex(), api.getPrefs()]);
   const admin = await api.getAdmin();
   const myUnits = index.units.filter(u => admin?.unitIds?.includes(u.id));
-  if (!state.unitId || !myUnits.some(u => u.id === state.unitId)) {
+  // Проверяем по всем подразделениям, а не только по своим: чужое
+  // админ видит (и не правит), выбор чужого не должен сбрасываться.
+  if (!state.unitId || !index.units.some(u => u.id === state.unitId)) {
     state.unitId = myUnits[0]?.id || index.units[0].id;
   }
   if (!state.weekFrom) state.weekFrom = startOfWeek(today());
@@ -66,6 +75,7 @@ export async function renderGrid(host) {
       ${legend()}
     </div>`;
 
+  if (quiet) { const w = host.querySelector('.g-wrap'); if (w) w.scrollLeft = scrollLeft; }
   bind(host, grid);
 }
 
@@ -182,7 +192,7 @@ function empty() {
 }
 
 function bind(host, grid) {
-  host.addEventListener('click', (e) => {
+  listen(host, 'click', (e) => {
     const wk = e.target.closest('[data-wk]');
     if (wk) {
       const v = wk.dataset.wk;
@@ -196,6 +206,9 @@ function bind(host, grid) {
     if (c) { state.course = c.dataset.course ? Number(c.dataset.course) : null; return renderGrid(host); }
 
     const cell = e.target.closest('[data-cell]');
-    if (cell) openConflictSheet(cell.dataset.cell, cell.dataset.cdate, grid);
+    if (cell) {
+      openConflictSheet(cell.dataset.cell, cell.dataset.cdate, grid,
+        { onChanged: () => renderGrid(host, { quiet: true }) });
+    }
   });
 }

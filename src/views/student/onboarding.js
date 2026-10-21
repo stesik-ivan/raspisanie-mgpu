@@ -8,6 +8,7 @@ import { fuzzySearch, highlight, esc } from '../../ui/search.js';
 import { arc } from '../../ui/arc.js';
 import { icon } from '../../ui/icons.js';
 import { toast } from '../../ui/toast.js';
+import { listen } from '../../ui/listen.js';
 
 let step = 'hello';
 let draft = { role: null, unitId: null, groupId: null, subgroup: null };
@@ -163,7 +164,7 @@ function bind(host) {
     });
   }
 
-  host.addEventListener('click', async (e) => {
+  listen(host, 'click', async (e) => {
     const t = e.target.closest('[data-role],[data-unit],[data-group],[data-sub],[data-teacher],[data-back],[data-finish]');
     if (!t) return;
 

@@ -11,6 +11,7 @@ import { longDate, durationShort, plural } from '../../ui/format.js';
 import { today, now, nowMinutes } from '../../data/clock.js';
 import { toMinutes } from '../../domain/bells.js';
 import { openRoomSheet } from '../student/peek.js';
+import { listen } from '../../ui/listen.js';
 
 const KINDS = [
   { id: null, label: 'Любая' },
@@ -78,7 +79,7 @@ export async function renderRooms(host) {
         </div>`}
     </div>`;
 
-  host.addEventListener('click', (e) => {
+  listen(host, 'click', (e) => {
     const b = e.target.closest('[data-b]');
     if (b) { filter.buildingId = b.dataset.b || null; return renderRooms(host); }
     const k = e.target.closest('[data-k]');

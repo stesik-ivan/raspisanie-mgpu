@@ -5,6 +5,7 @@ import * as api from '../../data/api.js';
 import { emptyArc, spinner } from '../../ui/arc.js';
 import { esc } from '../../ui/search.js';
 import { stamp, dowShort } from '../../ui/format.js';
+import { listen } from '../../ui/listen.js';
 
 const ACTIONS = {
   create: 'добавил', update: 'изменил', delete: 'удалил', publish: 'опубликовал',
@@ -43,7 +44,7 @@ export async function renderAudit(host) {
         </div>`}
     </div>`;
 
-  host.addEventListener('click', (e) => {
+  listen(host, 'click', (e) => {
     const t = e.target.closest('[data-who]');
     if (t) { who = t.dataset.who || null; renderAudit(host); }
   });
