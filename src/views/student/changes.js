@@ -15,10 +15,10 @@ const TITLES = {
 export async function renderChanges(host) {
   host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
 
-  const prefs = await api.getPrefs();
-  if (!prefs.groupId) { location.hash = '#/today'; return; }
+  const subject = await api.getSubject();
+  if (!subject) { location.hash = '#/today'; return; }
 
-  const list = await api.getChanges(prefs.groupId, { fromDate: today(), days: 14 });
+  const list = await api.getChanges(subject, { fromDate: today(), days: 14 });
 
   host.innerHTML = `
     <div class="page">

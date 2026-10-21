@@ -12,8 +12,10 @@ export async function renderMore(host) {
   const [prefs, meta, index, ephemeral] = await Promise.all([
     api.getPrefs(), api.getMeta(), api.getIndex(), api.isEphemeral(),
   ]);
+  const forTeacher = prefs.role === 'teacher';
   const group = index.units.flatMap(u => u.groups).find(g => g.id === prefs.groupId);
   const unit = index.units.find(u => u.id === prefs.unitId);
+  const teacher = index.teachers.find(t => t.id === prefs.teacherId);
 
   host.innerHTML = `
     <div class="page">
@@ -24,18 +26,21 @@ export async function renderMore(host) {
       ${ephemeral ? `<p class="notice notice-warn">Браузер не даёт сохранять настройки — выбор группы забудется при перезагрузке. Обычно так бывает в приватном режиме.</p>` : ''}
 
       <section class="card">
-        <h2 class="card-title">Моя группа</h2>
-        <p class="card-main">${esc(group?.code || 'не выбрана')}${prefs.subgroup ? `, подгруппа ${esc(prefs.subgroup)}` : ''}</p>
-        <p class="card-sub">${esc(unit?.name || '')}</p>
-        <button class="btn" data-act="change-group">Сменить группу</button>
+        <h2 class="card-title">${forTeacher ? 'Это я' : 'Моя группа'}</h2>
+        <p class="card-main">${forTeacher
+          ? esc(teacher?.fio || 'не выбран')
+          : esc(group?.code || 'не выбрана') + (prefs.subgroup ? `, подгруппа ${esc(prefs.subgroup)}` : '')}</p>
+        <p class="card-sub">${forTeacher ? esc(teacher?.position || '') : esc(unit?.name || '')}</p>
+        <button class="btn" data-act="change-group">${forTeacher ? 'Это не я' : 'Сменить группу'}</button>
       </section>
 
+      ${forTeacher ? '' : `
       <section class="card">
         <h2 class="card-title">Календарь на телефоне</h2>
         <p class="card-sub">Пары появятся в обычном календаре и будут обновляться вместе с расписанием.</p>
         <button class="btn btn-primary" data-act="ics">${icon('today')} Скачать .ics</button>
         <button class="btn btn-ghost" data-act="ics-help">Как подписаться</button>
-      </section>
+      </section>`}
 
       <section class="card">
         <h2 class="card-title">Тема</h2>

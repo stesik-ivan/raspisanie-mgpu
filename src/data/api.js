@@ -77,27 +77,42 @@ export async function getTeacherSchedule(teacherId) {
   return { teacherId, occurrences: occurrencesOf(state, { teacherId }).map(decorate) };
 }
 
-/** День группы: пары, окна и где сейчас находимся по сетке звонков. */
-export async function getDay(groupId, date, { subgroup = null } = {}) {
-  const { occurrences } = await getGroupSchedule(groupId, { subgroup });
+/* Студент и преподаватель смотрят на одно и то же расписание с двух сторон,
+   поэтому «день» и «неделя» принимают subject: либо группу с подгруппой,
+   либо преподавателя. Иначе пришлось бы держать два почти одинаковых
+   набора функций и два набора экранов. */
+async function scheduleOf(subject) {
+  if (subject?.teacherId) return (await getTeacherSchedule(subject.teacherId)).occurrences;
+  return (await getGroupSchedule(subject.groupId, { subgroup: subject.subgroup })).occurrences;
+}
+
+function bellsFor(subject, occurrences) {
+  if (subject?.groupId) return ctx.bellScheduleOf(subject.groupId);
+  // У преподавателя своей сетки нет: он может вести и в институте, и в
+  // колледже. Берём сетку группы его первой пары в этот день.
+  return ctx.bellScheduleOf(occurrences[0]?.groupIds?.[0]);
+}
+
+/** День: пары, окна и где сейчас по сетке звонков. */
+export async function getDay(subject, date) {
+  const occurrences = await scheduleOf(subject);
   const list = occurrences.filter(o => o.date === date).sort((a, b) => a.start.localeCompare(b.start));
-  const bells = ctx.bellScheduleOf(groupId);
   return {
     date,
     weekday: weekdayOf(date),
     lessons: list,
     gaps: gapsBetween(list),
-    bells: slotsOf(bells, weekdayOf(date)),
+    bells: slotsOf(bellsFor(subject, list), weekdayOf(date)),
     isToday: date === today(),
   };
 }
 
-/** Неделя группы: семь дней начиная с понедельника. */
-export async function getWeek(groupId, anyDate, { subgroup = null } = {}) {
+/** Неделя: понедельник–суббота. Воскресенье не показываем. */
+export async function getWeek(subject, anyDate) {
   const monday = startOfWeek(anyDate);
-  const { occurrences } = await getGroupSchedule(groupId, { subgroup });
+  const occurrences = await scheduleOf(subject);
   const days = [];
-  for (let i = 0; i < 6; i++) {           // воскресенье не показываем
+  for (let i = 0; i < 6; i++) {
     const date = addDays(monday, i);
     days.push({
       date, weekday: i + 1, isToday: date === today(),
@@ -107,11 +122,20 @@ export async function getWeek(groupId, anyDate, { subgroup = null } = {}) {
   return { from: monday, to: addDays(monday, 5), days };
 }
 
-/** Лента изменений по группе вперёд на N дней. */
-export async function getChanges(groupId, { fromDate = today(), days = 14 } = {}) {
+/** Кого показываем: группу студента или самого преподавателя. */
+export async function getSubject() {
+  ensure(); await tick();
+  const p = state.prefs;
+  if (p.role === 'teacher' && p.teacherId) return { teacherId: p.teacherId };
+  if (p.groupId) return { groupId: p.groupId, subgroup: p.subgroup };
+  return null;
+}
+
+/** Лента изменений вперёд на N дней — по группе или по преподавателю. */
+export async function getChanges(subject, { fromDate = today(), days = 14 } = {}) {
   ensure(); await tick();
   const to = addDays(fromDate, days);
-  const { occurrences } = await getGroupSchedule(groupId);
+  const occurrences = await scheduleOf(typeof subject === 'string' ? { groupId: subject } : subject);
   return occurrences
     .filter(o => o.changeIds.length && compareIso(o.date, fromDate) >= 0 && compareIso(o.date, to) <= 0)
     .map(o => ({

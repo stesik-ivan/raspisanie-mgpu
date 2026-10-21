@@ -12,6 +12,7 @@ import { renderWeek } from './views/student/week.js';
 import { renderChanges } from './views/student/changes.js';
 import { renderMore, applyTheme } from './views/student/more.js';
 import { openTeacherSheet, openRoomSheet } from './views/student/peek.js';
+import { renderRooms } from './views/teacher/rooms.js';
 
 const STUDENT_TABS = [
   { id: 'today',   label: 'Сегодня',   icon: 'today',   href: '#/today' },
@@ -20,14 +21,27 @@ const STUDENT_TABS = [
   { id: 'more',    label: 'Ещё',       icon: 'more',    href: '#/more' },
 ];
 
-const TAB_ALIASES = { lesson: 'today', teacher: 'week', room: 'week', setup: 'more' };
+/* У преподавателя вместо ленты изменений — свободные аудитории: изменения
+   он видит прямо в своих парах, а вот «куда сесть с группой прямо сейчас»
+   не отвечает сегодня ни один источник. */
+const TEACHER_TABS = [
+  { id: 'today', label: 'Мои пары', icon: 'today', href: '#/today' },
+  { id: 'week',  label: 'Неделя',   icon: 'week',  href: '#/week' },
+  { id: 'rooms', label: 'Аудитории', icon: 'rooms', href: '#/rooms' },
+  { id: 'more',  label: 'Ещё',      icon: 'more',  href: '#/more' },
+];
+
+const TAB_ALIASES = { lesson: 'today', teacher: 'week', room: 'week', setup: 'more', changes: 'today' };
 
 const VIEWS = {
   today:   (host, args) => renderToday(host, { date: args[0] }),
   week:    (host, args) => renderWeek(host, { date: args[0] }),
   changes: (host) => renderChanges(host),
+  rooms:   (host) => renderRooms(host),
   more:    (host) => renderMore(host),
 };
+
+let shellRole = null;
 
 let busy = false;
 
@@ -43,10 +57,26 @@ async function render() {
   if (!prefs.onboarded || route === 'setup') {
     document.querySelector('#tabbar').hidden = true;
     document.querySelector('#sidebar').hidden = true;
+    shellRole = null;
     return startOnboarding(() => { replace('#/today'); render(); });
   }
   document.querySelector('#tabbar').hidden = false;
   document.querySelector('#sidebar').hidden = false;
+
+  // Набор вкладок зависит от роли. Перерисовываем оболочку только при
+  // смене роли: иначе каждая навигация пересобирала бы таб-бар.
+  const role = prefs.role === 'teacher' ? 'teacher' : 'student';
+  if (shellRole !== role) {
+    shellRole = role;
+    renderShell(role === 'teacher' ? TEACHER_TABS : STUDENT_TABS, { brand: 'Расписание' });
+  }
+
+  // Вкладки, которых у этой роли нет, ведут на главный экран.
+  const allowed = (role === 'teacher' ? TEACHER_TABS : STUDENT_TABS).map(t => t.id);
+  if (VIEWS[route] && !allowed.includes(route) && !TAB_ALIASES[route]) {
+    replace('#/today');
+    return;
+  }
 
   setActiveTab(route, TAB_ALIASES);
 
@@ -123,7 +153,6 @@ async function start() {
     console.warn('main: не применил тему', err);
   }
 
-  renderShell(STUDENT_TABS, { brand: 'Расписание' });
   initSheet();
   watchOffline();
 

@@ -13,10 +13,11 @@ import { openLessonSheet } from './lesson-sheet.js';
 export async function renderWeek(host, { date = today() } = {}) {
   host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
 
-  const prefs = await api.getPrefs();
-  if (!prefs.groupId) { location.hash = '#/today'; return; }
+  const subject = await api.getSubject();
+  if (!subject) { location.hash = '#/today'; return; }
+  const forTeacher = !!subject.teacherId;
 
-  const week = await api.getWeek(prefs.groupId, date, { subgroup: prefs.subgroup });
+  const week = await api.getWeek(subject, date);
   const meta = await api.getMeta();
   const outOfTerm = meta.term && (compareIso(week.to, meta.term.from) < 0 || compareIso(week.from, meta.term.to) > 0);
 
@@ -42,7 +43,7 @@ export async function renderWeek(host, { date = today() } = {}) {
       </ul>
 
       ${outOfTerm ? `<p class="notice">Эта неделя вне семестра. Семестр идёт с ${esc(dayMonth(meta.term.from))} по ${esc(dayMonth(meta.term.to))}.</p>` : ''}
-      ${week.days.some(d => d.lessons.length) ? list(week) : emptyWeek()}
+      ${week.days.some(d => d.lessons.length) ? list(week, forTeacher) : emptyWeek()}
     </div>`;
 
   bind(host, week.from);
@@ -54,7 +55,7 @@ function dots(lessons) {
     `<i class="dot${lessons[i]?.status === 'cancelled' ? ' is-off' : ''}"></i>`).join('');
 }
 
-function list(week) {
+function list(week, forTeacher) {
   return `<div class="week-list">${week.days.map(d => `
     <section class="week-day${d.isToday ? ' is-today' : ''}">
       <h2 class="week-day-head">
@@ -62,12 +63,12 @@ function list(week) {
         <span class="week-day-date">${esc(dayMonth(d.date))}</span>
         ${d.isToday ? '<span class="badge badge-accent">сегодня</span>' : ''}
       </h2>
-      ${d.lessons.length ? `<ul class="week-rows">${d.lessons.map(row).join('')}</ul>`
+      ${d.lessons.length ? `<ul class="week-rows">${d.lessons.map(o => row(o, forTeacher)).join('')}</ul>`
         : '<p class="week-free">Пар нет</p>'}
     </section>`).join('')}</div>`;
 }
 
-function row(o) {
+function row(o, forTeacher) {
   return `
     <li><button class="week-row${o.status === 'cancelled' ? ' is-cancelled' : ''}${o.changeIds.length && o.status !== 'cancelled' ? ' is-changed' : ''}"
       data-lesson="${esc(o.lessonId)}" data-ldate="${esc(o.date)}">
@@ -75,7 +76,7 @@ function row(o) {
       <span class="week-row-body">
         <span class="week-row-name">${esc(o.discipline)}</span>
         <span class="week-row-sub">${esc(kindName(o.kind))} · ${esc(o.roomLabel)}${o.building ? `, ${esc(o.building.code)}` : ''}</span>
-        <span class="week-row-who">${o.teachers.map(t => esc(t.fio)).join(', ')}</span>
+        <span class="week-row-who">${forTeacher ? esc(o.groups.map(g => g.code).join(' + ')) : o.teachers.map(t => esc(t.fio)).join(', ')}</span>
       </span>
     </button></li>`;
 }

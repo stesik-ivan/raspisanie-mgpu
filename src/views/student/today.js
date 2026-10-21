@@ -17,19 +17,24 @@ import { openLessonSheet } from './lesson-sheet.js';
 export async function renderToday(host, { date = today() } = {}) {
   host.innerHTML = `<div class="page">${loading()}</div>`;
 
-  const prefs = await api.getPrefs();
-  if (!prefs.groupId) { host.innerHTML = needGroup(); return; }
+  const [prefs, subject] = await Promise.all([api.getPrefs(), api.getSubject()]);
+  if (!subject) { host.innerHTML = needGroup(); return; }
 
-  const [day, changes] = await Promise.all([
-    api.getDay(prefs.groupId, date, { subgroup: prefs.subgroup }),
-    api.getChanges(prefs.groupId, { fromDate: date, days: 1 }),
-  ]);
-  const group = (await api.getIndex()).units.flatMap(u => u.groups).find(g => g.id === prefs.groupId);
+  const forTeacher = !!subject.teacherId;
+  const day = await api.getDay(subject, date);
+  const changes = forTeacher
+    ? day.lessons.filter(o => o.changeIds.length)
+    : await api.getChanges(subject.groupId, { fromDate: date, days: 1 });
+
+  const index = await api.getIndex();
+  const who = forTeacher
+    ? index.teachers.find(t => t.id === subject.teacherId)?.fio
+    : index.units.flatMap(u => u.groups).find(g => g.id === subject.groupId)?.code;
 
   host.innerHTML = `
     <div class="page day-page" data-date="${date}">
-      ${header(date, group, prefs, changes.length)}
-      ${day.lessons.length ? feed(day) : empty(date)}
+      ${header(date, who, prefs, changes.length, forTeacher)}
+      ${day.lessons.length ? feed(day, forTeacher) : empty(date)}
     </div>`;
 
   bind(host, date);
@@ -43,19 +48,19 @@ function needGroup() {
   return `<div class="page"><div class="stub">
     <div class="stub-arc">${emptyArc(96)}</div>
     <p>Группа не выбрана.</p>
-    <a class="btn btn-primary" href="#/more">Выбрать группу</a>
+    <a class="btn btn-primary" href="#/setup">Выбрать группу</a>
   </div></div>`;
 }
 
-function header(date, group, prefs, changeCount) {
-  const sub = prefs.subgroup ? `, подгруппа ${prefs.subgroup}` : '';
+function header(date, who, prefs, changeCount, forTeacher) {
+  const sub = !forTeacher && prefs.subgroup ? `, подгруппа ${prefs.subgroup}` : '';
   return `
     <header class="day-head">
       <div class="day-nav">
         <button class="icon-btn" data-day="-1" aria-label="Предыдущий день">${icon('back')}</button>
         <div class="day-head-text">
           <h1 class="day-title">${esc(longDate(date))}</h1>
-          <p class="day-sub">${esc(group?.code || '')}${esc(sub)}</p>
+          <p class="day-sub">${esc(who || '')}${esc(sub)}</p>
         </div>
         <button class="icon-btn" data-day="1" aria-label="Следующий день">${icon('chevron')}</button>
       </div>
@@ -67,12 +72,12 @@ function header(date, group, prefs, changeCount) {
     </header>`;
 }
 
-function feed(day) {
+function feed(day, forTeacher) {
   const live = day.isToday ? nowMinutes() : null;
   const items = [];
 
   day.lessons.forEach((lesson, i) => {
-    items.push(card(lesson, live));
+    items.push(card(lesson, live, forTeacher));
     const gap = day.gaps.find(g => g.afterIndex === i);
     if (gap) items.push(gapRow(gap));
   });
@@ -80,7 +85,7 @@ function feed(day) {
   return `<ul class="feed">${items.join('')}</ul>`;
 }
 
-function card(o, live) {
+function card(o, live, forTeacher) {
   const cancelled = o.status === 'cancelled';
   const from = toMinutes(o.start), to = toMinutes(o.end);
   const running = live !== null && !cancelled && live >= from && live < to;
@@ -105,7 +110,9 @@ function card(o, live) {
             ${o.isOnline ? icon('online') : icon('pin')}
             <span>${esc(o.roomLabel)}${o.building ? `, ${esc(o.building.code)}` : ''}</span>
           </p>
-          <p class="lesson-who">${o.teachers.map(t => esc(t.fio)).join(', ') || '—'}</p>
+          <p class="lesson-who">${forTeacher
+            ? esc(o.groups.map(g => g.code).join(' + ')) + (o.subgroup ? `, подгруппа ${esc(o.subgroup)}` : '')
+            : (o.teachers.map(t => esc(t.fio)).join(', ') || '—')}</p>
           ${running ? `<p class="lesson-now">Идёт сейчас · до конца ${esc(durationShort(left))}</p>` : ''}
           ${cancelled ? `<p class="lesson-flag">Отменено${reason(o)}</p>` : ''}
           ${changed ? `<p class="lesson-flag">${esc(changeNote(o))}</p>` : ''}

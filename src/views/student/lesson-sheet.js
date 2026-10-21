@@ -12,9 +12,11 @@ import { toMinutes } from '../../domain/bells.js';
 export async function openLessonSheet(lessonId, date) {
   openSheet({ title: 'Пара', html: '<div class="center-block sh-loading"></div>' });
   try {
-    const prefs = await api.getPrefs();
-    const { occurrences } = await api.getGroupSchedule(prefs.groupId, { subgroup: prefs.subgroup });
-    const mine = occurrences.filter(o => o.lessonId === lessonId);
+    const subject = await api.getSubject();
+    const all = subject?.teacherId
+      ? (await api.getTeacherSchedule(subject.teacherId)).occurrences
+      : (await api.getGroupSchedule(subject.groupId, { subgroup: subject.subgroup })).occurrences;
+    const mine = all.filter(o => o.lessonId === lessonId);
     const o = mine.find(x => x.date === date) || mine[0];
     if (!o) { openSheet({ title: 'Пара', html: '<p class="sh-empty">Занятие не найдено</p>' }); return; }
 
