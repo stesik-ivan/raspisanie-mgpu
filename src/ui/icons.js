@@ -2,8 +2,12 @@
    Штрих наследует цвет текста через currentColor, поэтому тёмная тема
    и активная вкладка работают сами, без второго набора файлов. */
 
+/* width/height проставлены атрибутами нарочно. SVG с одним viewBox и без
+   размеров браузер растягивает на всю ширину контейнера: стоит забыть
+   правило в CSS — и вместо иконки получается шеврон в пол-экрана. CSS эти
+   атрибуты перекрывает, так что везде, где размер задан, ничего не меняется. */
 const S = (d, extra = '') =>
-  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+  `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7"
     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${d}${extra}</svg>`;
 
 const ICONS = {

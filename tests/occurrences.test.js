@@ -152,3 +152,13 @@ test('изменение по чужому занятию не трогает н
   ], ctx);
   assert.ok(out.every(o => o.status === 'ok'));
 });
+
+test('замена преподавателя запоминает, кого заменили', () => {
+  const out = applyChanges(base(), [
+    { id: 'C11', date: '2026-10-07', lessonId: 'L1', type: 'teacher',
+      patch: { teacherIds: ['T-petrov'] }, reason: 'больничный' },
+  ], ctx);
+  const hit = out.find(o => o.date === '2026-10-07');
+  assert.deepEqual(hit.replacedTeacherIds, ['T-ivanova']);
+  assert.deepEqual(hit.teacherIds, ['T-petrov']);
+});

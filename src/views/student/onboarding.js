@@ -28,7 +28,15 @@ export function isOnboarding() { return step !== 'done'; }
 
 function render() {
   const host = document.querySelector('#view');
-  host.innerHTML = `<div class="ob">${screens[step]()}</div>`;
+  const screen = screens[step];
+  if (!screen) {
+    // Шаг 'done' сюда доходить не должен, но если дойдёт — лучше показать
+    // первый экран, чем уронить онбординг на глазах у руководства.
+    console.warn('onboarding: неизвестный шаг', step);
+    step = 'hello';
+    return render();
+  }
+  host.innerHTML = `<div class="ob">${screen()}</div>`;
   bind(host);
 }
 

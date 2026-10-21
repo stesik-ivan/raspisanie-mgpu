@@ -119,8 +119,9 @@ function reason(o) { return o.reason ? ` · ${esc(o.reason)}` : ''; }
 function changeNote(o) {
   if (o.isExtra) return 'Дополнительное занятие';
   if (o.moved) return 'Перенесено';
-  const who = o.teachers.map(t => t.fio).join(', ');
-  return o.reason ? `Замена: ${who} · ${o.reason}` : `Замена: ${who}`;
+  const was = o.replacedTeachers?.map(t => t.fio).join(', ');
+  const note = was ? `Замена: вместо ${was}` : 'Изменено';
+  return o.reason ? `${note} · ${o.reason}` : note;
 }
 
 function gapRow(gap) {

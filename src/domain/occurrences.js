@@ -97,6 +97,9 @@ export function applyChanges(occurrences, changes, ctx) {
       } else if (type === 'move') {
         move(hit, ch, ctx);
       } else if (type === 'teacher' && ch.patch?.teacherIds) {
+        // Кого заменили — такая же часть изменения, как и кем. Студенту
+        // нужно «вместо Петрова», а не только фамилия пришедшего (docs/03).
+        hit.replacedTeacherIds = [...hit.teacherIds];
         hit.teacherIds = [...ch.patch.teacherIds];
       } else if (type === 'room' && 'roomId' in (ch.patch || {})) {
         hit.roomId = ch.patch.roomId;
