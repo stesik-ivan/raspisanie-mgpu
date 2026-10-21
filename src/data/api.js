@@ -181,6 +181,9 @@ export async function getGridView({ unitId, course = null, weekFrom = today() })
     bells: slotsOf(ctx.bellScheduleOf(groups[0]?.id), 1),
     cells: mine.map(o => ({
       ...decorate(o),
+      // Вхождение не знает, опубликовано ли занятие: это свойство занятия,
+      // а не его даты. Для сетки оно нужно — черновик помечается штриховкой.
+      published: state.lessons.find(l => l.id === o.lessonId)?.published !== false,
       conflicts: (byLesson.get(`${o.lessonId}|${o.date}`) || []).map(c => ({
         level: c.level, type: c.type, message: c.message,
       })),
@@ -227,6 +230,20 @@ function nextBusy(all, roomId, date, m) {
 }
 
 /* ---------- календарь ---------- */
+
+/** Свободные аудитории на произвольный интервал — для разбора конфликта. */
+export async function getFreeRoomsAt({ date, start, end, buildingId = null, kind = null }) {
+  ensure(); await tick();
+  return freeRooms(occurrencesOf(state, { includeDraft: true }), ctx,
+    { date, start, end, buildingId, kind });
+}
+
+/** Текущий администратор: его зона ответственности. */
+export async function getAdmin() {
+  ensure(); await tick();
+  const id = state.prefs.adminId || state.admins[0]?.id;
+  return state.admins.find(a => a.id === id) || null;
+}
 
 export async function getIcsForGroup(groupId) {
   ensure(); await tick();

@@ -13,6 +13,8 @@ import { renderChanges } from './views/student/changes.js';
 import { renderMore, applyTheme } from './views/student/more.js';
 import { openTeacherSheet, openRoomSheet } from './views/student/peek.js';
 import { renderRooms } from './views/teacher/rooms.js';
+import { renderGrid } from './views/admin/grid.js';
+import { renderAudit } from './views/admin/audit.js';
 
 const STUDENT_TABS = [
   { id: 'today',   label: 'Сегодня',   icon: 'today',   href: '#/today' },
@@ -31,6 +33,14 @@ const TEACHER_TABS = [
   { id: 'more',  label: 'Ещё',      icon: 'more',  href: '#/more' },
 ];
 
+/* Админ в демо входит кнопкой в «Ещё». Сетка — на просмотр: форма ввода
+   и публикация следующим этапом, и обещать их вкладкой нечестно. */
+const ADMIN_TABS = [
+  { id: 'grid',  label: 'Сетка',  icon: 'grid',    href: '#/grid' },
+  { id: 'audit', label: 'Журнал', icon: 'changes', href: '#/audit' },
+  { id: 'more',  label: 'Ещё',    icon: 'more',    href: '#/more' },
+];
+
 const TAB_ALIASES = { lesson: 'today', teacher: 'week', room: 'week', setup: 'more', changes: 'today' };
 
 const VIEWS = {
@@ -38,6 +48,8 @@ const VIEWS = {
   week:    (host, args) => renderWeek(host, { date: args[0] }),
   changes: (host) => renderChanges(host),
   rooms:   (host) => renderRooms(host),
+  grid:    (host) => renderGrid(host),
+  audit:   (host) => renderAudit(host),
   more:    (host) => renderMore(host),
 };
 
@@ -65,18 +77,20 @@ async function render() {
 
   // Набор вкладок зависит от роли. Перерисовываем оболочку только при
   // смене роли: иначе каждая навигация пересобирала бы таб-бар.
-  const role = prefs.role === 'teacher' ? 'teacher' : 'student';
+  const role = ['teacher', 'admin'].includes(prefs.role) ? prefs.role : 'student';
+  const tabs = role === 'admin' ? ADMIN_TABS : role === 'teacher' ? TEACHER_TABS : STUDENT_TABS;
   if (shellRole !== role) {
     shellRole = role;
-    renderShell(role === 'teacher' ? TEACHER_TABS : STUDENT_TABS, { brand: 'Расписание' });
+    renderShell(tabs, { brand: role === 'admin' ? 'Администратор' : 'Расписание' });
   }
 
-  // Вкладки, которых у этой роли нет, ведут на главный экран.
-  const allowed = (role === 'teacher' ? TEACHER_TABS : STUDENT_TABS).map(t => t.id);
+  // Вкладки, которых у этой роли нет, ведут на её главный экран.
+  const allowed = tabs.map(t => t.id);
   if (VIEWS[route] && !allowed.includes(route) && !TAB_ALIASES[route]) {
-    replace('#/today');
+    replace(role === 'admin' ? '#/grid' : '#/today');
     return;
   }
+  if (route === 'today' && role === 'admin') { replace('#/grid'); return; }
 
   setActiveTab(route, TAB_ALIASES);
 

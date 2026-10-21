@@ -13,6 +13,11 @@ export async function renderMore(host) {
     api.getPrefs(), api.getMeta(), api.getIndex(), api.isEphemeral(),
   ]);
   const forTeacher = prefs.role === 'teacher';
+  const forAdmin = prefs.role === 'admin';
+  const admin = forAdmin ? await api.getAdmin() : null;
+  const adminUnits = admin
+    ? admin.unitIds.map(id => index.units.find(u => u.id === id)?.short).filter(Boolean).join(', ')
+    : '';
   const group = index.units.flatMap(u => u.groups).find(g => g.id === prefs.groupId);
   const unit = index.units.find(u => u.id === prefs.unitId);
   const teacher = index.teachers.find(t => t.id === prefs.teacherId);
@@ -25,6 +30,7 @@ export async function renderMore(host) {
 
       ${ephemeral ? `<p class="notice notice-warn">Браузер не даёт сохранять настройки — выбор группы забудется при перезагрузке. Обычно так бывает в приватном режиме.</p>` : ''}
 
+      ${forAdmin ? '' : `
       <section class="card">
         <h2 class="card-title">${forTeacher ? 'Это я' : 'Моя группа'}</h2>
         <p class="card-main">${forTeacher
@@ -32,7 +38,7 @@ export async function renderMore(host) {
           : esc(group?.code || 'не выбрана') + (prefs.subgroup ? `, подгруппа ${esc(prefs.subgroup)}` : '')}</p>
         <p class="card-sub">${forTeacher ? esc(teacher?.position || '') : esc(unit?.name || '')}</p>
         <button class="btn" data-act="change-group">${forTeacher ? 'Это не я' : 'Сменить группу'}</button>
-      </section>
+      </section>`}
 
       ${forTeacher ? '' : `
       <section class="card">
@@ -56,6 +62,16 @@ export async function renderMore(host) {
         <h2 class="card-title">Установить приложение</h2>
         <p class="card-sub">Откроется с домашнего экрана и будет работать без интернета.</p>
         <button class="btn" data-act="install">Как установить</button>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Администратор</h2>
+        <p class="card-sub">${forAdmin
+          ? 'Вы вошли как ' + esc(admin?.fio || '') + '. Зона: ' + esc(adminUnits)
+          : 'В демо вход без пароля. В боевой версии — учётная запись в системе университета.'}</p>
+        <button class="btn${forAdmin ? '' : ' btn-primary'}" data-act="${forAdmin ? 'admin-out' : 'admin-in'}">
+          ${forAdmin ? 'Выйти из админки' : 'Войти как администратор'}
+        </button>
       </section>
 
       <section class="card card-quiet">
@@ -87,6 +103,20 @@ function bind(host) {
     if (!act) return;
 
     if (act === 'change-group') { location.hash = '#/setup'; return; }
+
+    if (act === 'admin-in') {
+      await api.setPrefs({ role: 'admin', adminId: 'a-iest' });
+      toast('Вы вошли как администратор ИЕСТ');
+      location.hash = '#/grid';
+      return;
+    }
+    if (act === 'admin-out') {
+      const prefs = await api.getPrefs();
+      await api.setPrefs({ role: prefs.teacherId ? 'teacher' : 'student' });
+      toast('Вы вышли из админки');
+      location.hash = '#/today';
+      return;
+    }
 
     if (act === 'ics') {
       try {
