@@ -1,0 +1,12 @@
+samples/
+.DS_Store
+node_modules/
+
+# Рабочая папка исполнения плана (ледгер, брифы) — не история проекта
+.superpowers/
+
+# Сторонние скиллы, поставленные через npx skills add
+.agents/
+.claude/skills/pocketbase-best-practices
+.claude/skills/web-design-guidelines
+.claude/skills/webapp-testing

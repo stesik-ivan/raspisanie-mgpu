@@ -1,0 +1,70 @@
+/* Брендбук МГПУ → токены. Цвета в коде только через эти переменные.
+   Брендбук, стр. 13 (шрифты) и 14 (цвета). Производные оттенки помечены «произв.». */
+
+@font-face { font-family: "Museo Sans Cyrl"; src: url("fonts/MuseoSansCyrl-100.woff2") format("woff2"); font-weight: 100; font-style: normal; font-display: swap; }
+@font-face { font-family: "Museo Sans Cyrl"; src: url("fonts/MuseoSansCyrl-300.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Museo Sans Cyrl"; src: url("fonts/MuseoSansCyrl-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Museo Sans Cyrl"; src: url("fonts/MuseoSansCyrl-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Museo Sans Cyrl"; src: url("fonts/MuseoSansCyrl-900.woff2") format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
+
+:root {
+  /* Фирменные цвета — неизменны */
+  --mgpu-red:      #EE3524;  /* буква «О», кольца. Контраст на белом 4,06 */
+  --mgpu-graphite: #4D4D4F;  /* написание названия. 8,43 на белом */
+  --mgpu-grey:     #A7A9AC;  /* аббревиатура МГПУ. 2,36 на белом — не для текста */
+  --mgpu-light:    #F1F2F2;  /* фоновый */
+
+  /* Шрифт: запасной по брендбуку — Helvetica или Arial */
+  --font: "Museo Sans Cyrl", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Светлая тема */
+  --bg:            var(--mgpu-light);
+  --surface:       #FFFFFF;
+  --text:          var(--mgpu-graphite);
+  --text-2:        #6B6B6E;            /* произв. от графита, 5,31 на белом — вторичный текст */
+  --line:          var(--mgpu-grey);   /* волоски, рамки, неактивное */
+  --line-soft:     #E3E4E5;            /* произв., разделители в списках */
+  --accent:        var(--mgpu-red);    /* индикаторы, иконки, крупный текст ≥ 19px bold, кольца */
+  --accent-text:   #C7281A;            /* произв., если красный нужен мелким текстом: 5,6 на белом */
+  --on-accent:     #FFFFFF;
+
+  /* Метрика (из «Полки», HIG) */
+  --r-s: 12px; --r-m: 16px; --r-l: 20px; --r-xl: 28px;
+  --tap: 44px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --spring: cubic-bezier(.34, 1.36, .64, 1);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+
+  /* Типографика */
+  --w-body: 300;   /* основной текст ≥ 16px */
+  --w-ui: 500;     /* подписи, кнопки, всё мельче 15px */
+  --w-head: 700;
+  --w-display: 900; /* крупные цифры времени, номера пар */
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:          #161617;
+    --surface:     #1F1F21;
+    --text:        var(--mgpu-light);
+    --text-2:      var(--mgpu-grey);   /* 7,68 на #161617 */
+    --line:        #3A3A3C;
+    --line-soft:   #2A2A2C;
+    --accent:      var(--mgpu-red);    /* 4,45 на #161617 */
+    --accent-text: #FF5A47;            /* произв., 5,86 на #161617 */
+  }
+}
+:root[data-theme="dark"] {
+  --bg:          #161617;
+  --surface:     #1F1F21;
+  --text:        var(--mgpu-light);
+  --text-2:      var(--mgpu-grey);
+  --line:        #3A3A3C;
+  --line-soft:   #2A2A2C;
+  --accent:      var(--mgpu-red);
+  --accent-text: #FF5A47;
+}
+
+body { font-family: var(--font); font-weight: var(--w-body); background: var(--bg); color: var(--text); }

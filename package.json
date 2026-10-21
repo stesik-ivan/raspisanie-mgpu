@@ -1,0 +1,10 @@
+{
+  "name": "raspisanie-mgpu",
+  "private": true,
+  "type": "module",
+  "description": "Расписание занятий МГПУ — демо для руководства",
+  "scripts": {
+    "test": "node --test tests/",
+    "serve": "node serve.mjs"
+  }
+}

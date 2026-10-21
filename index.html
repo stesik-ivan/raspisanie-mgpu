@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<!-- Ни maximum-scale, ни user-scalable=no: запрет масштабирования отрезает
+     людей со слабым зрением от приложения ради борьбы с зумом по двойному
+     тапу. Двойной тап лечится через touch-action в стилях. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Расписание МГПУ</title>
+<meta name="description" content="Расписание занятий МГПУ: институты и колледж. Пары на сегодня, неделю и изменения.">
+<!-- Значения должны совпадать с --bg из assets/brand.css. Атрибут meta не
+     понимает var(), поэтому main.js пересинхронизирует их из токена при
+     загрузке, а это — запасной вариант на случай, если скрипт не дошёл. -->
+<meta name="theme-color" content="#161617" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1F2F2" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Расписание">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/brand.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div id="app">
+  <aside id="sidebar" hidden></aside>
+  <main id="main">
+    <div id="view"></div>
+  </main>
+  <nav id="tabbar" hidden></nav>
+</div>
+
+<div id="sheet-layer" hidden>
+  <div id="sheet-backdrop"></div>
+  <section id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></section>
+</div>
+<div id="toast" hidden></div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
