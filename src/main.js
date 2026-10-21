@@ -92,7 +92,9 @@ async function render() {
   }
   if (route === 'today' && role === 'admin') { replace('#/grid'); return; }
 
-  setActiveTab(route, TAB_ALIASES);
+  // Своя вкладка важнее псевдонима: у студента «Изменения» — отдельная вкладка,
+  // псевдоним на «Сегодня» нужен только ролям, у которых её нет.
+  setActiveTab(route, allowed.includes(route) ? {} : TAB_ALIASES);
 
   // Шторки-врезки поверх текущего экрана, а не вместо него.
   if (route === 'teacher' && args[0]) { openTeacherSheet(args[0]); return; }
