@@ -15,6 +15,7 @@ import { rangeLabel, dowFull, dayMonth, kindName, shortDate } from '../../ui/for
 import { today } from '../../data/clock.js';
 import { addDays, startOfWeek, weekdayOf } from '../../domain/dates.js';
 import { openConflictSheet } from './conflict-sheet.js';
+import { openLessonForm } from './lesson-form.js';
 import { listen } from '../../ui/listen.js';
 
 const DAYS = [1, 2, 3, 4, 5, 6];
@@ -41,6 +42,7 @@ export async function renderGrid(host, { quiet = false } = {}) {
   if (!state.weekFrom) state.weekFrom = startOfWeek(today());
 
   const grid = await api.getGridView(state);
+  const mine = admin?.unitIds?.includes(state.unitId) ?? false;
   const courses = [...new Set(index.units.find(u => u.id === state.unitId).groups.map(g => g.course))].sort();
 
   host.innerHTML = `
@@ -52,6 +54,7 @@ export async function renderGrid(host, { quiet = false } = {}) {
         </div>
         <div class="grid-head-actions">
           ${grid.draftCount ? `<span class="badge badge-accent">Неопубликованных: ${grid.draftCount}</span>` : ''}
+          ${mine ? `<button class="btn btn-primary g-add" data-add>${icon('plus')} Занятие</button>` : ''}
           <button class="icon-btn" data-wk="-1" aria-label="Предыдущая неделя">${icon('back')}</button>
           <button class="badge badge-ghost" data-wk="today">Эта неделя</button>
           <button class="icon-btn" data-wk="1" aria-label="Следующая неделя">${icon('chevron')}</button>
@@ -71,7 +74,7 @@ export async function renderGrid(host, { quiet = false } = {}) {
       </div>
 
       ${foreignNote(admin, grid)}
-      ${grid.groups.length ? table(grid) : empty()}
+      ${grid.groups.length ? table(grid, mine) : empty()}
       ${legend()}
     </div>`;
 
@@ -98,7 +101,7 @@ function columnsOf(groups) {
   return cols;
 }
 
-function table(grid) {
+function table(grid, mine) {
   const cols = columnsOf(grid.groups);
   const idx = new Map(cols.map((c, i) => [`${c.groupId}|${c.subgroup ?? ''}`, i]));
 
@@ -116,8 +119,22 @@ function table(grid) {
       rows.push(`<div class="g-time" style="grid-row:${row}">
         <b>${slot.n}</b><span>${esc(slot.start)}</span><span class="sh-dim">${esc(slot.end)}</span></div>`);
 
+      const busy = new Set();
       for (const cell of grid.cells.filter(c => c.date === date && c.slot === slot.n)) {
-        placed.push(cellBox(cell, cols, idx, row));
+        const span = spanOf(cell, cols, idx);
+        if (!span) continue;
+        for (let i = span[0]; i <= span[1]; i++) busy.add(i);
+        placed.push(cellBox(cell, span, row));
+      }
+      // Пустая клетка своей зоны — кнопка «добавить» с готовыми днём, парой
+      // и группой. В чужой зоне её нет: там можно только смотреть.
+      if (mine) {
+        cols.forEach((c, i) => {
+          if (busy.has(i)) return;
+          placed.push(`<button class="g-empty" style="grid-row:${row}; grid-column:${i + 2}"
+            data-new data-gid="${esc(c.groupId)}" data-sub="${esc(c.subgroup ?? '')}" data-wd="${weekday}" data-slot="${slot.n}" data-date="${date}"
+            aria-label="Добавить занятие: ${esc(c.code)}${c.subgroup ? `, подгруппа ${esc(c.subgroup)}` : ''}, ${esc(dowFull(date))}, ${slot.n} пара">${icon('plus')}</button>`);
+        });
       }
       row++;
     }
@@ -138,9 +155,10 @@ function table(grid) {
     </div>`;
 }
 
-function cellBox(cell, cols, idx, row) {
-  // Поток занимает подряд идущие колонки своих групп — как объединённая
-  // ячейка в Excel. Берём крайние и растягиваем между ними.
+/* Поток занимает подряд идущие колонки своих групп — как объединённая
+   ячейка в Excel. Берём крайние и растягиваем между ними.
+   Возвращает [первая, последняя] колонки, считая от нуля. */
+function spanOf(cell, cols, idx) {
   const hits = [];
   for (const gid of cell.groupIds) {
     if (cell.subgroup == null) {
@@ -150,9 +168,12 @@ function cellBox(cell, cols, idx, row) {
       if (i != null) hits.push(i);
     }
   }
-  if (!hits.length) return '';
-  const from = Math.min(...hits) + 2;
-  const to = Math.max(...hits) + 3;
+  return hits.length ? [Math.min(...hits), Math.max(...hits)] : null;
+}
+
+function cellBox(cell, span, row) {
+  const from = span[0] + 2;
+  const to = span[1] + 3;
 
   const err = cell.conflicts.some(c => c.level === 'error');
   const warn = !err && cell.conflicts.length > 0;
@@ -205,10 +226,17 @@ function bind(host, grid) {
     const c = e.target.closest('[data-course]');
     if (c) { state.course = c.dataset.course ? Number(c.dataset.course) : null; return renderGrid(host); }
 
+    const onChanged = () => renderGrid(host, { quiet: true });
     const cell = e.target.closest('[data-cell]');
-    if (cell) {
-      openConflictSheet(cell.dataset.cell, cell.dataset.cdate, grid,
-        { onChanged: () => renderGrid(host, { quiet: true }) });
+    if (cell) { openConflictSheet(cell.dataset.cell, cell.dataset.cdate, grid, { onChanged }); return; }
+
+    if (e.target.closest('[data-add]')) { openLessonForm({ unitId: state.unitId, onChanged }); return; }
+    const blank = e.target.closest('[data-new]');
+    if (blank) {
+      const d = blank.dataset;
+      openLessonForm({ unitId: state.unitId, onChanged, from: d.date, preset: {
+        groupIds: [d.gid], subgroup: d.sub || null, weekday: Number(d.wd), slot: Number(d.slot),
+      } });
     }
   });
 }

@@ -145,3 +145,38 @@ export function ru(iso) {
   const m = ISO_RE.exec(String(iso ?? ''));
   return m ? `${m[3]}.${m[2]}` : String(iso);
 }
+
+/**
+ * Ручной ввод дат: «07.09, 21.09» → ISO. Так даты пишет учебная часть.
+ *
+ * Год берётся из границ семестра: в осеннем семестре, который переходит
+ * через Новый год, «15.01» — это январь следующего года, а не прошлого.
+ * Нераспознанное возвращается в bad, а не выбрасывается молча: форма
+ * покажет, что именно она не поняла.
+ *
+ * @param {string} text
+ * @param {{termFrom:string, termTo:string}} term
+ * @returns {{dates:string[], bad:string[]}}
+ */
+export function parseDayList(text, term) {
+  const tokens = String(text ?? '').split(/[\s,;]+/).filter(Boolean);
+  const years = [...new Set([term.termFrom, term.termTo].map(d => Number(String(d).slice(0, 4))).filter(Boolean))];
+  const found = new Set();
+  const bad = [];
+
+  for (const t of tokens) {
+    const m = /^(\d{1,2})\.(\d{1,2})$/.exec(t);
+    if (!m) { bad.push(t); continue; }
+    const md = `${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    const candidates = years.map(y => `${y}-${md}`).filter(isIso);
+    if (!candidates.length) { bad.push(t); continue; }
+    const inside = candidates.find(iso => compareIso(iso, term.termFrom) >= 0 && compareIso(iso, term.termTo) <= 0);
+    found.add(inside || candidates[0]);
+  }
+  return { dates: [...found].sort(compareIso), bad };
+}
+
+/** ['2026-09-07', '2026-09-21'] → '07.09, 21.09' — для поля ввода. */
+export function formatDayList(list) {
+  return (list || []).map(ru).join(', ');
+}

@@ -5,6 +5,7 @@
    собирать это из ответов PocketBase, когда сервер появится. */
 
 import { lessonOccurrences, applyChanges } from '../domain/occurrences.js';
+import { publishedLessons, workingLessons } from '../domain/drafts.js';
 
 /** Контекст для функций домена. */
 export function domainCtx(state) {
@@ -49,8 +50,9 @@ export function domainCtx(state) {
  */
 export function occurrencesOf(state, q = {}) {
   const ctx = domainCtx(state);
-  const lessons = (state.lessons || []).filter(l =>
-    (q.includeDraft || l.published) &&
+  // Студент видит опубликованные версии, админ — рабочие копии с черновиками.
+  const source = q.includeDraft ? workingLessons(state.lessons) : publishedLessons(state.lessons);
+  const lessons = source.filter(l =>
     (!q.groupId || l.groupIds.includes(q.groupId)) &&
     (!q.teacherId || l.teacherIds.includes(q.teacherId)));
 

@@ -12,7 +12,7 @@ import { clearState } from './demo-store.js';
 import { buildSeed } from './seed.js';
 import { occurrencesOf } from './ctx.js';
 import { ensure, getCtx, commit, replaceState, seedDay, tick } from './session.js';
-import { findConflicts, freeRooms } from '../domain/conflicts.js';
+import { findConflicts, freeRooms, orientConflict } from '../domain/conflicts.js';
 import { buildIcs } from '../domain/ics.js';
 import { slotsOf, toMinutes } from '../domain/bells.js';
 import { addDays, weekdayOf, compareIso, startOfWeek } from '../domain/dates.js';
@@ -157,7 +157,8 @@ export async function getGridView({ unitId, course = null, weekFrom = today() })
       if (!side) continue;
       const key = `${side.lessonId}|${side.date}`;
       if (!byLesson.has(key)) byLesson.set(key, []);
-      byLesson.get(key).push(c);
+      // У каждой ячейки своя сторона: «занято тем-то» — про соседа, а не про себя.
+      byLesson.get(key).push(orientConflict(c, side.lessonId, cx()));
     }
   }
 

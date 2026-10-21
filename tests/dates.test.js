@@ -114,3 +114,37 @@ test('правило без parts и без except не роняет разбо�
   assert.deepEqual(expandDateRule({}, { weekday: 3, ...TERM }).dates, []);
   assert.deepEqual(expandDateRule(null, { weekday: 3, ...TERM }).dates, []);
 });
+
+/* Ручной ввод дат в форме: так их пишет учебная часть — «07.09, 21.09». */
+import { parseDayList, formatDayList } from '../src/domain/dates.js';
+
+test('parseDayList: «07.09, 21.09» → ISO-даты семестра', () => {
+  assert.deepEqual(parseDayList('07.09, 21.09', TERM), { dates: ['2026-09-07', '2026-09-21'], bad: [] });
+});
+
+test('parseDayList терпит пробелы, точки с запятой и однозначные числа', () => {
+  assert.deepEqual(parseDayList(' 7.9;21.09 ,  4.11 ', TERM).dates, ['2026-09-07', '2026-09-21', '2026-11-04']);
+});
+
+test('parseDayList: пустая строка — пустой список без ошибок', () => {
+  assert.deepEqual(parseDayList('', TERM), { dates: [], bad: [] });
+  assert.deepEqual(parseDayList('  ,  ', TERM), { dates: [], bad: [] });
+});
+
+test('parseDayList возвращает нераспознанное, а не молчит', () => {
+  assert.deepEqual(parseDayList('31.02, 15.09, завтра', TERM), { dates: ['2026-09-15'], bad: ['31.02', 'завтра'] });
+});
+
+test('parseDayList берёт год из границ семестра, даже через Новый год', () => {
+  const winter = { termFrom: '2026-09-01', termTo: '2027-01-31' };
+  assert.deepEqual(parseDayList('28.12, 15.01', winter).dates, ['2026-12-28', '2027-01-15']);
+});
+
+test('parseDayList убирает дубли и сортирует', () => {
+  assert.deepEqual(parseDayList('21.09, 07.09, 21.09', TERM).dates, ['2026-09-07', '2026-09-21']);
+});
+
+test('formatDayList — обратно в «07.09, 21.09»', () => {
+  assert.equal(formatDayList(['2026-09-07', '2026-09-21']), '07.09, 21.09');
+  assert.equal(formatDayList([]), '');
+});

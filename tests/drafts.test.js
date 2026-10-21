@@ -72,3 +72,74 @@ test('lessonDiff для создания и удаления', () => {
   assert.ok(lessonDiff(a, null).every(d => d.to === null));
   assert.ok(lessonDiff(null, a).some(d => d.field === 'roomId' && d.to === 'r-133'));
 });
+
+import { newLesson, removeLesson, publishedLessons, workingLessons, validateLesson } from '../src/domain/drafts.js';
+
+const fields = () => ({
+  disciplineId: 'd1', kind: 'лк', groupIds: ['g1'], subgroup: null, teacherIds: ['t1'],
+  roomId: 'r-212', weekday: 3, slot: 2, dateRule: { parts: [{ type: 'range', from: '2026-09-01', to: null, everyWeeks: 1 }], except: [] },
+});
+
+test('новое занятие — черновик без опубликованной версии', () => {
+  const l = newLesson(fields(), { id: 'N1', termId: 't', at: 'a' });
+  assert.equal(l.id, 'N1');
+  assert.equal(l.published, false);
+  assert.equal(l.pub, undefined);
+  assert.equal(l.version, 1);
+  assert.equal(l.roomId, 'r-212');
+});
+
+test('удаление никогда не публиковавшегося занятия убирает его совсем', () => {
+  const l = newLesson(fields(), { id: 'N1', termId: 't', at: 'a' });
+  assert.equal(removeLesson(l, 'b'), null);
+});
+
+test('удаление опубликованного — черновик удаления, студент до публикации видит старое', () => {
+  const d = removeLesson(base(), 'b');
+  assert.equal(d.deleted, true);
+  assert.equal(d.published, false);
+  assert.equal(d.pub.roomId, 'r-133');
+  assert.equal(d.version, 2);
+});
+
+test('удаление занятия с правками удаляет правки, а снимок остаётся опубликованным', () => {
+  const e = editLesson(base(), { roomId: 'r-212' }, 'a');
+  const d = removeLesson(e, 'b');
+  assert.equal(d.pub.roomId, 'r-133');
+});
+
+test('publishedLessons: студент видит опубликованное, а не рабочую копию', () => {
+  const clean = { ...base(), id: 'A' };
+  const edited = { ...editLesson({ ...base(), id: 'B' }, { roomId: 'r-212' }, 'a') };
+  const fresh = newLesson(fields(), { id: 'C', termId: 't', at: 'a' });
+  const gone = removeLesson({ ...base(), id: 'D' }, 'a');
+  const pub = publishedLessons([clean, edited, fresh, gone]);
+  assert.deepEqual(pub.map(l => l.id), ['A', 'B', 'D']);
+  assert.equal(pub.find(l => l.id === 'B').roomId, 'r-133');
+  assert.ok(pub.every(l => l.published === true && !l.deleted && !l.pub));
+});
+
+test('workingLessons: админ видит рабочую копию без удалённых', () => {
+  const edited = editLesson({ ...base(), id: 'B' }, { roomId: 'r-212' }, 'a');
+  const gone = removeLesson({ ...base(), id: 'D' }, 'a');
+  const work = workingLessons([edited, gone]);
+  assert.deepEqual(work.map(l => l.id), ['B']);
+  assert.equal(work[0].roomId, 'r-212');
+});
+
+test('validateLesson называет каждое незаполненное поле', () => {
+  assert.deepEqual(validateLesson(fields()), []);
+  const empty = validateLesson({ groupIds: [], teacherIds: [], dateRule: { parts: [] } });
+  for (const f of ['disciplineId', 'groupIds', 'teacherIds', 'roomId', 'weekday', 'slot', 'dateRule']) {
+    assert.ok(empty.some(p => p.field === f), `нет проблемы для ${f}`);
+  }
+  assert.ok(empty.every(p => typeof p.message === 'string' && p.message));
+});
+
+test('тот же состав групп и преподавателей в другом порядке — не правка', () => {
+  const l = { ...base(), groupIds: ['g2', 'g1'], teacherIds: ['t1', 't2'] };
+  const e = editLesson(l, { groupIds: ['g1', 'g2'], teacherIds: ['t2', 't1'] }, 'a');
+  assert.equal(e.published, true);
+  assert.equal(e.version, 1);
+  assert.deepEqual(e.groupIds, ['g2', 'g1'], 'порядок остаётся прежним: первая группа задаёт сетку звонков');
+});

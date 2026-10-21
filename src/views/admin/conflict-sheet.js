@@ -10,6 +10,7 @@ import { openSheet, closeSheet } from '../../ui/sheet.js';
 import { toast } from '../../ui/toast.js';
 import { icon } from '../../ui/icons.js';
 import { humanError } from '../../data/errors.js';
+import { openLessonForm } from './lesson-form.js';
 import { esc } from '../../ui/search.js';
 import { kindName, longDate, shortDate } from '../../ui/format.js';
 
@@ -49,8 +50,12 @@ export async function openConflictSheet(lessonId, date, grid, { onChanged = null
       ${!cell.conflicts.length ? `<p class="sh-ok">${icon('clock')} Конфликтов нет</p>` : ''}
 
       <div class="sh-free" data-free></div>
+      <div class="sh-acts" data-acts></div>
     `,
-    onMount: (el) => { if (err.length) fillFreeRooms(el, cell, onChanged); },
+    onMount: (el) => {
+      if (err.length) fillFreeRooms(el, cell, onChanged);
+      fillActions(el, cell, onChanged);
+    },
   });
 }
 
@@ -100,6 +105,21 @@ async function fillFreeRooms(el, cell, onChanged) {
   } catch (err) {
     console.error('conflict-sheet: не собрал свободные аудитории', err);
     host.innerHTML = '';
+  }
+}
+
+/* Правка — только в своей зоне. Кнопок не показываем, а не прячем за отказ:
+   в чужой зоне админу нечего нажимать. */
+async function fillActions(el, cell, onChanged) {
+  const host = el.querySelector('[data-acts]');
+  try {
+    if (!host || !(await api.canEditLesson(cell.lessonId))) return;
+    host.innerHTML = `<button class="btn" data-edit>Изменить занятие</button>`;
+    host.addEventListener('click', (e) => {
+      if (e.target.closest('[data-edit]')) openLessonForm({ unitId: null, lessonId: cell.lessonId, onChanged });
+    });
+  } catch (err) {
+    console.error('conflict-sheet: не проверил, можно ли править', err);
   }
 }
 

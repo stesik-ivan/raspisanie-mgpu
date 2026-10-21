@@ -15,6 +15,8 @@
 export const LESSON_FIELDS = ['disciplineId', 'kind', 'groupIds', 'subgroup',
   'teacherIds', 'roomId', 'weekday', 'slot', 'dateRule'];
 
+const SET_FIELDS = ['groupIds', 'teacherIds'];
+const sameSet = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every(x => b.includes(x));
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 function snapshot(lesson) {
@@ -32,6 +34,12 @@ export function editLesson(lesson, patch, at) {
   const changes = {};
   for (const f of LESSON_FIELDS) {
     if (patch && f in patch) changes[f] = structuredClone(patch[f]);
+  }
+  // Группы и преподаватели — множества: форма может прислать их в другом
+  // порядке. Тот же состав — не правка, и порядок остаётся прежним (первая
+  // группа задаёт сетку звонков).
+  for (const f of SET_FIELDS) {
+    if (f in changes && sameSet(changes[f], lesson[f])) changes[f] = structuredClone(lesson[f]);
   }
   if (LESSON_FIELDS.every(f => !(f in changes) || same(changes[f], lesson[f]))) {
     return structuredClone(lesson);
@@ -60,4 +68,61 @@ export function lessonDiff(before, after) {
   return LESSON_FIELDS
     .filter(f => !same(before?.[f], after?.[f]))
     .map(f => ({ field: f, from: before?.[f] ?? null, to: after?.[f] ?? null }));
+}
+
+/**
+ * Новое занятие. Всегда черновик: студент увидит его после публикации.
+ * @param {object} fields смысловые поля
+ * @param {{id:string, termId:string, at:string}} meta
+ */
+export function newLesson(fields, { id, termId, at }) {
+  const l = { id, termId };
+  for (const f of LESSON_FIELDS) l[f] = structuredClone(fields?.[f] ?? null);
+  l.groupIds = l.groupIds || [];
+  l.teacherIds = l.teacherIds || [];
+  return { ...l, published: false, updatedAt: at, version: 1 };
+}
+
+/**
+ * Удаление. Никогда не публиковавшееся занятие исчезает сразу (null).
+ * Опубликованное становится черновиком удаления: студенты видят его,
+ * пока удаление не опубликовано.
+ */
+export function removeLesson(lesson, at) {
+  if (lesson.published === false && !lesson.pub) return null;
+  const pub = lesson.pub ? structuredClone(lesson.pub) : snapshot(lesson);
+  return { ...structuredClone(lesson), pub, published: false, deleted: true, version: (lesson.version || 0) + 1, updatedAt: at };
+}
+
+/** Что видят студенты: опубликованные версии, без черновиков. */
+export function publishedLessons(lessons) {
+  return (lessons || []).flatMap(l => {
+    if (l.published !== false && !l.deleted) return [l];
+    if (l.pub) return [{ ...l.pub, id: l.id, published: true }];
+    return [];
+  });
+}
+
+/** Что видит администратор: рабочие копии, без удалённых. */
+export function workingLessons(lessons) {
+  return (lessons || []).filter(l => !l.deleted);
+}
+
+/**
+ * Обязательные поля. Сообщения — для панели проверки в форме.
+ * Пустое правило дат ловится здесь; правило, не дающее ни одной даты, —
+ * при развёртке, у неё нужен контекст семестра.
+ * @returns {{field:string, message:string}[]}
+ */
+export function validateLesson(l) {
+  const out = [];
+  const need = (ok, field, message) => { if (!ok) out.push({ field, message }); };
+  need(l?.disciplineId, 'disciplineId', 'Выберите дисциплину');
+  need(l?.groupIds?.length, 'groupIds', 'Выберите хотя бы одну группу');
+  need(l?.teacherIds?.length, 'teacherIds', 'Выберите преподавателя');
+  need(l?.roomId, 'roomId', 'Выберите аудиторию или онлайн');
+  need(Number.isInteger(l?.weekday) && l.weekday >= 1 && l.weekday <= 7, 'weekday', 'Выберите день недели');
+  need(Number.isInteger(l?.slot) && l.slot >= 1, 'slot', 'Выберите пару');
+  need(l?.dateRule?.parts?.length, 'dateRule', 'Задайте даты: диапазон или список');
+  return out;
 }

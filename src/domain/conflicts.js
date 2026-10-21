@@ -205,6 +205,24 @@ export function freeRooms(occurrences, ctx, q) {
 }
 
 /**
+ * Сворачивает повторы: недельное занятие в занятой аудитории даёт конфликт
+ * на каждую дату, а человеку нужна одна строка и список дат. Повтором
+ * считается тот же тип конфликта с тем же вторым занятием.
+ * Сообщение берётся у ближайшей даты. Ошибки идут раньше предупреждений.
+ * @returns {object[]} конфликты с полем dates
+ */
+export function groupConflicts(conflicts) {
+  const groups = new Map();
+  for (const c of [...(conflicts || [])].sort((x, y) => x.date.localeCompare(y.date))) {
+    const key = [c.level, c.type, c.a?.lessonId, c.b?.lessonId ?? ''].join('|');
+    if (!groups.has(key)) groups.set(key, { ...c, dates: [] });
+    groups.get(key).dates.push(c.date);
+  }
+  return [...groups.values()].sort((x, y) =>
+    (x.level === 'error' ? 0 : 1) - (y.level === 'error' ? 0 : 1) || x.date.localeCompare(y.date));
+}
+
+/**
  * Аудитории, свободные на ВСЕХ вхождениях занятия.
  *
  * Аудитория меняется у занятия целиком, а не на одну дату. Конфликт
@@ -241,6 +259,21 @@ export function checkLesson(candidateOccurrences, existing, ctx) {
   const ids = new Set(candidateOccurrences.map(o => o.lessonId));
   const others = (existing || []).filter(o => !ids.has(o.lessonId));
   const all = [...others, ...candidateOccurrences];
-  return findConflicts(all, ctx).filter(c =>
-    ids.has(c.a?.lessonId) || ids.has(c.b?.lessonId));
+  return findConflicts(all, ctx)
+    .filter(c => ids.has(c.a?.lessonId) || ids.has(c.b?.lessonId))
+    .map(c => (ids.has(c.a?.lessonId) ? c : orientConflict(c, c.b.lessonId, ctx)));
 }
+
+/**
+ * Конфликт с позиции заданного занятия: оно становится `a`, и сообщение
+ * называет занятым второе. Переезд и вместимость не разворачиваются —
+ * у них текст про субъекта, а не про пару.
+ */
+export function orientConflict(c, lessonId, ctx) {
+  if (!c?.b || c.a?.lessonId === lessonId || c.b.lessonId !== lessonId) return c;
+  const text = MESSAGES[c.type];
+  if (!text) return c;
+  return { ...c, a: c.b, b: c.a, message: text(c.b, c.a, ctx) };
+}
+
+const MESSAGES = { room: roomMessage, teacher: teacherMessage, group: groupMessage };

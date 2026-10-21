@@ -272,3 +272,50 @@ test('freeRoomsForAll не считает занятостью само пров
   const free = freeRoomsForAll(cand, existing, ctx, { buildingId: 'ch1', kind: 'comp' });
   assert.deepEqual(free.map(r => r.id).sort(), ['r103', 'r215', 'r307']);
 });
+
+import { groupConflicts } from '../src/domain/conflicts.js';
+
+/* Недельное занятие в занятой аудитории даёт конфликт на каждую дату.
+   Пятнадцать одинаковых строк форма не показывает — одна строка и «ещё 14 дат». */
+test('groupConflicts сворачивает повторы по датам в одну строку', () => {
+  const a = (date) => occ({ lessonId: 'X', date, start: '10:30', end: '11:50', groupIds: ['g-sht'], teacherIds: ['t1'] });
+  const b = (date) => occ({ lessonId: 'Y', date, start: '10:40', end: '11:25', groupIds: ['g-spo'], teacherIds: ['t2'] });
+  const dates = ['2026-10-21', '2026-10-14', '2026-10-28'];
+  const list = findConflicts(dates.flatMap(d => [a(d), b(d)]), ctx);
+  const g = groupConflicts(list);
+  assert.equal(g.length, 1);
+  assert.deepEqual(g[0].dates, ['2026-10-14', '2026-10-21', '2026-10-28']);
+  assert.equal(g[0].date, '2026-10-14', 'показываем ближайшую дату');
+  assert.match(g[0].message, /14\.10/);
+});
+
+test('groupConflicts ставит ошибки раньше предупреждений', () => {
+  const list = [
+    { level: 'warning', type: 'travel', date: '2026-10-14', a: { lessonId: 'X' }, b: { lessonId: 'Z' }, message: 'w' },
+    { level: 'error', type: 'room', date: '2026-10-21', a: { lessonId: 'X' }, b: { lessonId: 'Y' }, message: 'e' },
+  ];
+  assert.deepEqual(groupConflicts(list).map(c => c.level), ['error', 'warning']);
+});
+
+import { checkLesson, orientConflict } from '../src/domain/conflicts.js';
+
+/* Текст конфликта читается с позиции проверяемого занятия: «аудитория
+   занята ТЕМ-ТО». Если в паре оно оказалось вторым, сообщение назвало бы
+   занятым его самого — бессмыслица в форме. */
+test('checkLesson пишет сообщение с позиции проверяемого занятия', () => {
+  const other = occ({ lessonId: 'OTHER', disciplineId: 'd3', kind: 'урок', start: '10:40', end: '11:25', groupIds: ['g-spo'], teacherIds: ['t2'] });
+  const cand = occ({ lessonId: 'NEW', disciplineId: 'd1', start: '10:30', end: '11:50', groupIds: ['g-sht'], teacherIds: ['t1'] });
+  const [c] = checkLesson([cand], [other], ctx);
+  assert.equal(c.a.lessonId, 'NEW');
+  assert.match(c.message, /занята: 11СПш-261, Информатика \(урок\)/);
+});
+
+test('orientConflict разворачивает конфликт к нужному занятию, симметричные не трогает', () => {
+  const x = occ({ lessonId: 'X', start: '10:30', end: '11:50', groupIds: ['g-sht'], teacherIds: ['t1'] });
+  const y = occ({ lessonId: 'Y', disciplineId: 'd2', start: '10:40', end: '11:25', groupIds: ['g-spo'], teacherIds: ['t2'] });
+  const [c] = findConflicts([x, y], ctx).filter(k => k.type === 'room');
+  const toY = orientConflict(c, 'Y', ctx);
+  assert.equal(toY.a.lessonId, 'Y');
+  assert.match(toY.message, /занята: ГШТ-261, Геология/);
+  assert.equal(orientConflict(c, 'X', ctx), c);
+});
