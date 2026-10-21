@@ -5,7 +5,7 @@ import * as api from '../../data/api.js';
 import { emptyArc, spinner } from '../../ui/arc.js';
 import { icon } from '../../ui/icons.js';
 import { esc } from '../../ui/search.js';
-import { rangeLabel, dowShort, dayMonth, kindName } from '../../ui/format.js';
+import { rangeLabel, dowShort, dayMonth, kindName, changeNote } from '../../ui/format.js';
 import { today } from '../../data/clock.js';
 import { addDays, startOfWeek, compareIso } from '../../domain/dates.js';
 import { openLessonSheet } from './lesson-sheet.js';
@@ -78,6 +78,7 @@ function row(o, forTeacher) {
         <span class="week-row-name">${esc(o.discipline)}</span>
         <span class="week-row-sub">${esc(kindName(o.kind))} · ${esc(o.roomLabel)}${o.building ? `, ${esc(o.building.code)}` : ''}</span>
         <span class="week-row-who">${forTeacher ? esc(o.groups.map(g => g.code).join(' + ')) : o.teachers.map(t => esc(t.fio)).join(', ')}</span>
+        ${o.changeIds.length ? `<span class="week-row-note">${esc(changeNote(o))}</span>` : ''}
       </span>
     </button></li>`;
 }

@@ -82,3 +82,20 @@ export function stamp(iso) {
   const [date, time] = String(iso).split('T');
   return `${shortDate(date)}, ${(time || '').slice(0, 5)}`;
 }
+
+/**
+ * Что изменилось в этот день — одной строкой для студента:
+ * «Перенесено с 21.10, 2 пара · Замена: вместо Петрова А.А. · больничный».
+ * Одна функция на «Сегодня», «Неделю» и карточку, чтобы они не расходились.
+ */
+export function changeNote(o) {
+  if (o.status === 'cancelled') return o.reason ? `Отменено · ${o.reason}` : 'Отменено';
+  if (o.isExtra) return o.reason ? `Дополнительное занятие · ${o.reason}` : 'Дополнительное занятие';
+  const notes = [];
+  if (o.moved) notes.push(o.movedFrom ? `Перенесено с ${shortDate(o.movedFrom.date)}, ${o.movedFrom.slot} пара` : 'Перенесено');
+  const was = (o.replacedTeachers || []).map(t => t.fio).join(', ');
+  if (was) notes.push(`Замена: вместо ${was}`);
+  if (o.replacedRoomLabel) notes.push(`Аудитория: вместо ${o.replacedRoomLabel}`);
+  const note = notes.join(' · ') || 'Изменено';
+  return o.reason ? `${note} · ${o.reason}` : note;
+}

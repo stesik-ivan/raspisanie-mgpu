@@ -8,7 +8,7 @@ import * as api from '../../data/api.js';
 import { arc, emptyArc, spinner } from '../../ui/arc.js';
 import { icon } from '../../ui/icons.js';
 import { esc } from '../../ui/search.js';
-import { longDate, durationShort, kindName, shortDate, plural } from '../../ui/format.js';
+import { longDate, durationShort, kindName, shortDate, plural, changeNote } from '../../ui/format.js';
 import { today, nowMinutes, isDemoTime } from '../../data/clock.js';
 import { addDays } from '../../domain/dates.js';
 import { toMinutes } from '../../domain/bells.js';
@@ -123,14 +123,6 @@ function card(o, live, forTeacher) {
 }
 
 function reason(o) { return o.reason ? ` · ${esc(o.reason)}` : ''; }
-
-function changeNote(o) {
-  if (o.isExtra) return 'Дополнительное занятие';
-  if (o.moved) return 'Перенесено';
-  const was = o.replacedTeachers?.map(t => t.fio).join(', ');
-  const note = was ? `Замена: вместо ${was}` : 'Изменено';
-  return o.reason ? `${note} · ${o.reason}` : note;
-}
 
 function gapRow(gap) {
   return `

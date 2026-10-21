@@ -12,35 +12,15 @@
 import { ensure, getCtx, commit, tick } from './session.js';
 import { occurrencesOf } from './ctx.js';
 import { ApiError } from './errors.js';
-import { now, toIsoDate, today } from './clock.js';
+import { today } from './clock.js';
+import {
+  currentAdmin, unitIdOfGroup, assertZone, stamp, writeAudit, candidateOccurrences, conflictsOf,
+} from './admin-core.js';
 import { lessonOccurrences, applyChanges } from '../domain/occurrences.js';
 import { checkLesson, freeRoomsForAll, groupConflicts } from '../domain/conflicts.js';
 import { editLesson, newLesson, removeLesson, validateLesson, LESSON_FIELDS } from '../domain/drafts.js';
 import { slotsOf } from '../domain/bells.js';
 import { HOLIDAYS } from '../domain/fixtures.js';
-
-/* ---------- кто правит и что ему можно ---------- */
-
-function currentAdmin(s) {
-  const id = s.prefs.adminId || s.admins[0]?.id;
-  return s.admins.find(a => a.id === id) || null;
-}
-
-function unitIdOfGroup(s, groupId) {
-  const g = s.groups.find(x => x.id === groupId);
-  return s.programs.find(p => p.id === g?.programId)?.unitId || null;
-}
-
-/** Все группы занятия должны быть в зоне админа: поток с чужой группой — чужой. */
-function assertZone(s, admin, lesson) {
-  if (!admin) throw new ApiError('foreign', 'Войдите как администратор, чтобы править расписание.');
-  const foreign = (lesson.groupIds || []).map(g => unitIdOfGroup(s, g)).find(u => !admin.unitIds.includes(u));
-  if (foreign !== undefined) {
-    const unit = s.units.find(u => u.id === foreign);
-    throw new ApiError('foreign',
-      `Это расписание ведёт ${unit?.short || 'другое подразделение'}. Видеть его можно, править — только его администратору.`);
-  }
-}
 
 /** Можно ли текущему админу править занятие — для экранов, чтобы не показывать кнопки зря. */
 export async function canEditLesson(lessonId) {
@@ -54,18 +34,6 @@ export async function canEditLesson(lessonId) {
     console.error('api-admin: проверка зоны упала', err);
     return false;
   }
-}
-
-/* ---------- вхождения и конфликты кандидата ---------- */
-
-function candidateOccurrences(s, ctx, lesson) {
-  const raw = lessonOccurrences(lesson, ctx).occurrences;
-  return applyChanges(raw, s.changes.filter(c => c.lessonId === lesson.id), ctx);
-}
-
-function conflictsOf(s, ctx, lesson) {
-  const existing = occurrencesOf(s, { includeDraft: true });
-  return checkLesson(candidateOccurrences(s, ctx, lesson), existing, ctx);
 }
 
 /**
@@ -83,24 +51,6 @@ export async function getRoomOptions(lessonId) {
     { buildingId: room.buildingId, kind: room.kind })
     .filter(r => r.id !== lesson.roomId)
     .map(r => ({ id: r.id, name: r.name, kind: r.kind, buildingId: r.buildingId }));
-}
-
-/* ---------- журнал ---------- */
-
-function stamp() {
-  const d = now();
-  return `${toIsoDate(d)}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function writeAudit(s, admin, entry) {
-  const id = `AU-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-  // Журнал отсортирован от новых к старым — новая запись встаёт первой.
-  s.audit.unshift({
-    id, at: stamp(), adminId: admin.id, ...entry,
-    before: entry.before ? structuredClone(entry.before) : null,
-    after: entry.after ? structuredClone(entry.after) : null,
-  });
-  return id;
 }
 
 /* ---------- правка занятия ---------- */
@@ -139,6 +89,10 @@ export async function saveLesson(id, patch, { version = null } = {}) {
   return { lesson: structuredClone(after), auditId };
 }
 
+/* Что отменяется: занятия и изменения на дату. Зона у изменения — зона
+   его занятия. */
+const COLLECTIONS = { Lesson: 'lessons', Change: 'changes' };
+
 /**
  * Отменить правку из журнала. Журнал не переписывается: отмена — это
  * новая запись с обратными «до» и «после».
@@ -148,27 +102,32 @@ export async function revert(auditId) {
   const s = ensure();
   const admin = currentAdmin(s);
   const entry = s.audit.find(a => a.id === auditId);
-  if (!entry || entry.entity !== 'Lesson') throw new ApiError('missing', 'Эту правку отменить нельзя.');
+  const key = COLLECTIONS[entry?.entity];
+  if (!entry || !key || (!entry.before && !entry.after)) throw new ApiError('missing', 'Эту правку отменить нельзя.');
+  const list = s[key];
 
-  const i = s.lessons.findIndex(l => l.id === entry.entityId);
-  const cur = i >= 0 ? s.lessons[i] : null;
+  const i = list.findIndex(x => x.id === entry.entityId);
+  const cur = i >= 0 ? list[i] : null;
   if ((cur?.version ?? null) !== (entry.after?.version ?? null)) {
-    throw new ApiError('stale', 'После этой правки занятие уже меняли. Отменить её нельзя, поправьте вручную.');
+    throw new ApiError('stale', 'После этой правки запись уже меняли. Отменить её нельзя, поправьте вручную.');
   }
-  assertZone(s, admin, cur || entry.before);
+  const subject = cur || entry.before;
+  const lesson = entry.entity === 'Lesson' ? subject : s.lessons.find(l => l.id === subject.lessonId);
+  if (lesson) assertZone(s, admin, lesson);
 
   // Конфликты здесь не проверяем: отмена возвращает ровно то, что было.
   let restored = null;
-  if (!entry.before) s.lessons.splice(i, 1);
+  if (!entry.before) list.splice(i, 1);
   else {
-    restored = { ...structuredClone(entry.before), version: (cur?.version ?? entry.before.version) + 1, updatedAt: stamp() };
-    if (cur) s.lessons[i] = restored; else s.lessons.push(restored);
+    restored = { ...structuredClone(entry.before), version: (cur?.version ?? entry.before.version ?? 0) + 1 };
+    if (entry.entity === 'Lesson') restored.updatedAt = stamp();
+    if (cur) list[i] = restored; else list.push(restored);
   }
 
   const action = !entry.before ? 'delete' : !cur ? 'create' : 'update';
-  writeAudit(s, admin, { entity: 'Lesson', entityId: entry.entityId, action, revertOf: auditId, before: cur, after: restored });
+  writeAudit(s, admin, { entity: entry.entity, entityId: entry.entityId, action, revertOf: auditId, before: cur, after: restored });
   commit();
-  return { lesson: restored && structuredClone(restored) };
+  return { [entry.entity === 'Lesson' ? 'lesson' : 'change']: restored && structuredClone(restored) };
 }
 
 /* ---------- форма занятия ---------- */

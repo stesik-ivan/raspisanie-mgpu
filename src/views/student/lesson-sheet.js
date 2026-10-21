@@ -4,7 +4,7 @@ import * as api from '../../data/api.js';
 import { openSheet } from '../../ui/sheet.js';
 import { icon } from '../../ui/icons.js';
 import { esc } from '../../ui/search.js';
-import { kindName, shortDate, longDate, stamp, durationShort } from '../../ui/format.js';
+import { kindName, shortDate, longDate, stamp, durationShort, changeNote } from '../../ui/format.js';
 import { today } from '../../data/clock.js';
 import { compareIso } from '../../domain/dates.js';
 import { toMinutes } from '../../domain/bells.js';
@@ -83,7 +83,7 @@ function history(all) {
           <li class="hist-item">
             <span class="hist-date">${esc(shortDate(x.date))}</span>
             <span class="hist-text">
-              ${x.status === 'cancelled' ? 'Отменено' : x.moved ? 'Перенесено' : x.isExtra ? 'Дополнительное занятие' : 'Замена'}
+              ${esc(changeNote({ ...x, reason: null }))}
               ${x.reason ? `<span class="sh-dim">${esc(x.reason)}</span>` : ''}
             </span>
           </li>`).join('')}

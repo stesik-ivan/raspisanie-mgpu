@@ -88,8 +88,9 @@ export function applyChanges(occurrences, changes, ctx) {
     for (const ch of list.filter(c => c?.type === type)) {
       if (type === 'extra') { out.push(...extra(ch, ctx)); continue; }
 
+      // Изменение привязано к исходной дате: перенос уже мог увести вхождение.
       const hit = out.find(o =>
-        o.lessonId === ch.lessonId && o.date === ch.date && o.status !== 'cancelled');
+        o.lessonId === ch.lessonId && (o.movedFrom?.date ?? o.date) === ch.date && o.status !== 'cancelled');
       if (!hit) continue;
 
       if (type === 'cancel') {
@@ -102,10 +103,13 @@ export function applyChanges(occurrences, changes, ctx) {
         hit.replacedTeacherIds = [...hit.teacherIds];
         hit.teacherIds = [...ch.patch.teacherIds];
       } else if (type === 'room' && 'roomId' in (ch.patch || {})) {
+        hit.replacedRoomId = hit.roomId;
         hit.roomId = ch.patch.roomId;
       }
       hit.changeIds.push(ch.id);
-      if (ch.reason) hit.reason = ch.reason;
+      if (ch.reason && !hit.reason?.split('; ').includes(ch.reason)) {
+        hit.reason = hit.reason ? `${hit.reason}; ${ch.reason}` : ch.reason;
+      }
     }
   }
 
@@ -118,6 +122,7 @@ function move(hit, ch, ctx) {
   const bells = ctx.bellScheduleOf(hit.groupIds[0]);
   const time = slotTime(bells, weekdayOf(date), slot);
   if (!time) return;   // некуда переносить — оставляем на месте
+  hit.movedFrom = { date: hit.date, slot: hit.slot, start: hit.start };
   hit.date = date;
   hit.slot = slot;
   hit.start = time.start;

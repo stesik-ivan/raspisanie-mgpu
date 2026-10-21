@@ -162,3 +162,42 @@ test('замена преподавателя запоминает, кого з�
   assert.deepEqual(hit.replacedTeacherIds, ['T-ivanova']);
   assert.deepEqual(hit.teacherIds, ['T-petrov']);
 });
+
+/* Студенту мало «Перенесено» и «Изменено»: нужно «с 14.10, 2 пары» и
+   «вместо ауд. 304». Поэтому вхождение помнит, что было до изменения. */
+test('перенос помнит, откуда перенесли', () => {
+  const out = applyChanges(base(), [
+    { id: 'C2', date: '2026-10-14', lessonId: 'L1', type: 'move', patch: { date: '2026-10-16', slot: 4 } },
+  ], ctx);
+  const moved = out.find(o => o.changeIds.includes('C2'));
+  assert.deepEqual(moved.movedFrom, { date: '2026-10-14', slot: 2, start: '10:30' });
+});
+
+test('смена аудитории помнит прежнюю', () => {
+  const out = applyChanges(base(), [
+    { id: 'C5', date: '2026-10-07', lessonId: 'L1', type: 'room', patch: { roomId: 'r215' } },
+  ], ctx);
+  assert.equal(out.find(o => o.date === '2026-10-07').replacedRoomId, 'r304');
+});
+
+/* Перенос обрабатывается раньше замен. Замена аудитории и преподавателя
+   привязана к исходной дате — после переноса она не должна теряться. */
+test('перенос и смена аудитории на одну дату применяются оба', () => {
+  const out = applyChanges(base(), [
+    { id: 'R', date: '2026-10-14', lessonId: 'L1', type: 'room', patch: { roomId: 'r215' } },
+    { id: 'M', date: '2026-10-14', lessonId: 'L1', type: 'move', patch: { date: '2026-10-16', slot: 4 } },
+    { id: 'T', date: '2026-10-14', lessonId: 'L1', type: 'teacher', patch: { teacherIds: ['T-petrov'] } },
+  ], ctx);
+  const hit = out.find(o => o.date === '2026-10-16');
+  assert.equal(hit.roomId, 'r215');
+  assert.deepEqual(hit.teacherIds, ['T-petrov']);
+  assert.deepEqual([...hit.changeIds].sort(), ['M', 'R', 'T']);
+});
+
+test('у нескольких изменений на одну дату причины складываются, а не затираются', () => {
+  const out = applyChanges(base(), [
+    { id: 'R', date: '2026-10-14', lessonId: 'L1', type: 'room', patch: { roomId: 'r215' }, reason: 'ремонт' },
+    { id: 'M', date: '2026-10-14', lessonId: 'L1', type: 'move', patch: { date: '2026-10-16', slot: 4 }, reason: 'мероприятие' },
+  ], ctx);
+  assert.equal(out.find(o => o.date === '2026-10-16').reason, 'мероприятие; ремонт');
+});

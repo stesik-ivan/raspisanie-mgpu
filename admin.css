@@ -252,3 +252,18 @@
   .g-empty svg { width: 16px; height: 16px; }
   .g-empty:hover, .g-empty:focus-visible { background: var(--line-soft); color: var(--text-2); }
 }
+
+/* ============ Изменение на дату ============ */
+
+.cf-summary { padding-bottom: 14px; border-bottom: .5px solid var(--line-soft); margin-bottom: 14px; font-size: 14px; }
+.cf-summary-name { font-size: 16px; font-weight: var(--w-head); margin-bottom: 4px; }
+.cf-summary-name .sh-dim { font-weight: var(--w-ui); font-size: 14px; }
+.cf-now { margin-top: 6px; color: var(--accent-text); font-weight: var(--w-ui); }
+.cf-existing { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.cf-existing li {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding-left: 12px; border-radius: var(--r-s); background: var(--line-soft); font-size: 14.5px; font-weight: var(--w-ui);
+}
+.cf-target:empty { display: none; }
+.cf-target { font-size: 14.5px; font-weight: var(--w-ui); }
+.room-pick[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: transparent; }

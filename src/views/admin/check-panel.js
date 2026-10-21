@@ -12,14 +12,17 @@ import { plural as pluralOf } from '../../ui/format.js';
 const FIELD_NAMES = {
   disciplineId: 'дисциплину', groupIds: 'группу', teacherIds: 'преподавателя',
   roomId: 'аудиторию', weekday: 'день', slot: 'пару', dateRule: 'даты',
+  date: 'дату', type: 'что изменить',
 };
 
 /**
  * @param {object} r ответ api.checkLessonDraft
- * @param {{bad:string[], ack:boolean}} o
+ * @param {{bad:string[], ack:boolean, freeTitle:string}} o
+ *   freeTitle — подпись к свободным аудиториям: у занятия они свободны на
+ *   всех датах, у изменения на дату — в это время
  * @returns {{html:string, canSave:boolean, needsAck:boolean}}
  */
-export function checkPanel(r, { bad = [], ack = false } = {}) {
+export function checkPanel(r, { bad = [], ack = false, freeTitle = 'Свободны на всех датах:' } = {}) {
   const errors = r.conflicts.filter(c => c.level === 'error');
   const warns = r.conflicts.filter(c => c.level === 'warning');
   // Незаполненное перечисляем одной строкой: в пустой форме это не ошибка,
@@ -46,7 +49,7 @@ export function checkPanel(r, { bad = [], ack = false } = {}) {
   if (r.freeRooms.length) {
     parts.push(`
       <div class="cp-free">
-        <p class="cp-free-title">Свободны на всех датах:</p>
+        <p class="cp-free-title">${esc(freeTitle)}</p>
         <div class="room-picks">${r.freeRooms.map(x =>
           `<button type="button" class="room-pick" data-pick-room="${esc(x.id)}" aria-label="Поставить в ${esc(x.name)}">${esc(x.name)}</button>`).join('')}</div>
       </div>`);

@@ -11,6 +11,7 @@ import { toast } from '../../ui/toast.js';
 import { icon } from '../../ui/icons.js';
 import { humanError } from '../../data/errors.js';
 import { openLessonForm } from './lesson-form.js';
+import { openChangeForm } from './change-form.js';
 import { esc } from '../../ui/search.js';
 import { kindName, longDate, shortDate } from '../../ui/format.js';
 
@@ -114,8 +115,13 @@ async function fillActions(el, cell, onChanged) {
   const host = el.querySelector('[data-acts]');
   try {
     if (!host || !(await api.canEditLesson(cell.lessonId))) return;
-    host.innerHTML = `<button class="btn" data-edit>Изменить занятие</button>`;
+    // У перенесённой пары изменение привязано к дню, откуда её перенесли.
+    const origin = cell.movedFrom?.date || cell.date;
+    host.innerHTML = `
+      <button class="btn" data-change>Изменение на ${esc(shortDate(origin))}</button>
+      <button class="btn" data-edit>Изменить занятие</button>`;
     host.addEventListener('click', (e) => {
+      if (e.target.closest('[data-change]')) openChangeForm({ lessonId: cell.lessonId, date: origin, onChanged });
       if (e.target.closest('[data-edit]')) openLessonForm({ unitId: null, lessonId: cell.lessonId, onChanged });
     });
   } catch (err) {

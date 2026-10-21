@@ -72,6 +72,12 @@ function matchesExtra(c, q) {
   return true;
 }
 
+/** Вхождения рабочих копий занятий без изменений на дату — основа для проверки нового изменения. */
+export function rawOccurrencesOf(state) {
+  const ctx = domainCtx(state);
+  return workingLessons(state.lessons).flatMap(l => lessonOccurrences(l, ctx).occurrences);
+}
+
 /** Все вхождения подразделения — для сетки админа и поиска свободных аудиторий. */
 export function allOccurrences(state, { includeDraft = false } = {}) {
   return occurrencesOf(state, { includeDraft });

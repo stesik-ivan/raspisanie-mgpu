@@ -17,8 +17,10 @@ import { buildIcs } from '../domain/ics.js';
 import { slotsOf, toMinutes } from '../domain/bells.js';
 import { addDays, weekdayOf, compareIso, startOfWeek } from '../domain/dates.js';
 import { today, now, nowMinutes } from './clock.js';
+import { decorator } from './decorate.js';
 
 export * from './api-admin.js';
+export * from './api-changes.js';
 
 /* Состояние живёт в session.js. Здесь к нему обращаются через st()/cx(),
    чтобы чтение и запись (api-admin.js) видели одно и то же. */
@@ -305,33 +307,7 @@ export async function getMeta() {
 
 /* ---------- расшифровка вхождения для интерфейса ---------- */
 
-function decorate(o) {
-  const room = cx().roomOf(o.roomId);
-  const building = room && room.buildingId
-    ? st().buildings.find(b => b.id === room.buildingId) : null;
-  return {
-    ...o,
-    discipline: cx().disciplineName(o.disciplineId),
-    teachers: o.teacherIds.map(id => cx().teacherOf(id)).filter(Boolean)
-      .map(t => ({ id: t.id, fio: t.fio, position: t.position })),
-    replacedTeachers: (o.replacedTeacherIds || []).map(id => cx().teacherOf(id)).filter(Boolean)
-      .map(t => ({ id: t.id, fio: t.fio, position: t.position })),
-    groups: o.groupIds.map(id => cx().groupOf(id)).filter(Boolean)
-      .map(g => ({ id: g.id, code: g.code })),
-    room,
-    roomLabel: roomLabel(room),
-    building,
-    address: building?.address || null,
-    isOnline: room?.kind === 'online',
-  };
-}
-
-function roomLabel(room) {
-  if (!room) return '—';
-  if (room.kind === 'online') return room.name;
-  const prefix = room.kind === 'gym' ? 'Зал' : room.kind === 'comp' ? 'Комп. класс' : room.kind === 'lab' ? 'Лаб.' : 'Ауд.';
-  return `${prefix} ${room.name}`;
-}
+const decorate = (o) => decorator(st(), cx())(o);
 
 function gapsBetween(list) {
   const out = [];
