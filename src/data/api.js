@@ -269,6 +269,8 @@ function decorate(o) {
     discipline: ctx.disciplineName(o.disciplineId),
     teachers: o.teacherIds.map(id => ctx.teacherOf(id)).filter(Boolean)
       .map(t => ({ id: t.id, fio: t.fio, position: t.position })),
+    replacedTeachers: (o.replacedTeacherIds || []).map(id => ctx.teacherOf(id)).filter(Boolean)
+      .map(t => ({ id: t.id, fio: t.fio, position: t.position })),
     groups: o.groupIds.map(id => ctx.groupOf(id)).filter(Boolean)
       .map(g => ({ id: g.id, code: g.code })),
     room,

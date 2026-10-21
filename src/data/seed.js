@@ -146,12 +146,25 @@ export function buildSeed({ today, groupCount = null } = {}) {
     return lesson;
   }
 
-  /** Первый свободный ресурс из пула. */
+  /* Свободный ресурс из пула — но не всегда первый.
+
+     Если брать первый подходящий, у группы весь день ведёт один человек
+     в одной аудитории: расписание получается формально корректное и
+     совершенно неправдоподобное. Поэтому обходим список по кругу со
+     сдвигом, который зависит от дня и пары. Сдвиг детерминирован, так что
+     сид остаётся воспроизводимым. */
+  let spin = 0;
   function pick(list, keyPrefix, weekday, slot, groupId) {
     const time = slotTime(bellsOf(groupId), weekday, slot);
     if (!time) return null;
     const from = toMinutes(time.start), to = toMinutes(time.end);
-    return list.find(x => alloc.free([`${keyPrefix}${x.id}`], weekday, from, to)) || null;
+    if (!list.length) return null;
+    const start = (weekday * 7 + slot * 3 + (spin++)) % list.length;
+    for (let i = 0; i < list.length; i++) {
+      const x = list[(start + i) % list.length];
+      if (alloc.free([`${keyPrefix}${x.id}`], weekday, from, to)) return x;
+    }
+    return null;
   }
 
   // Автозаполнение не выпускает группу из её корпуса: иначе расписание
@@ -165,7 +178,9 @@ export function buildSeed({ today, groupCount = null } = {}) {
       (r.pool === 'any' || r.pool === (unitId === 'u-ispo' ? 'spo' : 'vo')));
   };
   const teacherPool = (unitId) => state.teachers.filter(t => t.unitIds.includes(unitId));
-  const discPool = (unitId) => state.disciplines.filter(d => d.unitId === unitId);
+  // «Разговоры о важном» ставятся вручную в понедельник первым уроком и
+  // в автоподбор не идут: это еженедельный ритуал, а не обычный предмет.
+  const discPool = (unitId) => state.disciplines.filter(d => d.unitId === unitId && d.id !== 'd-razg');
 
   const G = (code) => state.groups.find(g => g.code === code).id;
 
@@ -236,16 +251,24 @@ export function buildSeed({ today, groupCount = null } = {}) {
     for (const g of groups) {
       const unitId = unitOf(g.id);
       const spo = unitId === 'u-ispo';
-      const days = g.code === 'ФК-242' ? [1, 2, 3] : spo ? [1, 2, 3, 4, 5] : [1, 2, 3, 4];
-      const slots = spo ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4];
+      // ФК-242 нарочно учится три дня: сценарий 11 требует группы с пустым
+      // учебным днём, чтобы показать экран «Сегодня пар нет».
+      const days = g.code === 'ФК-242' ? [1, 2, 3] : [1, 2, 3, 4, 5];
+      const slots = spo ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5];
       const discs = discPool(unitId);
-      const target = spo ? 12 : 7;
+      // Плотность подобрана под живое расписание: у СПО 4-5 уроков в день,
+      // у ВО 3-4 пары. Реже — и на экране «Сегодня» пусто в середине дня,
+      // а на показе это читается как «система ничего не знает».
+      const target = spo ? 22 : 15;
       let made = 0;
 
       for (const weekday of days) {
+        // Одна дисциплина — один раз в день. Два «Русского языка» подряд
+        // выглядят как ошибка набора, даже когда формально всё сходится.
+        const usedToday = new Set();
         for (const slot of slots) {
           if (made >= target) break;
-          if (rand() < 0.25) continue;
+          if (rand() < 0.12) continue;
           const kind = spo ? 'урок' : ['лк', 'пр', 'лб'][Math.floor(rand() * 3)];
           // Аудитория должна вмещать группу. Лаборатория на 16 мест рассчитана
           // на подгруппу, и сажать туда курс целиком — значит засыпать сетку
@@ -255,10 +278,12 @@ export function buildSeed({ today, groupCount = null } = {}) {
             || pick(fits(roomPool(unitId, 'aud')), 'r:', weekday, slot, g.id);
           const teacher = pick(teacherPool(unitId), 't:', weekday, slot, g.id);
           if (!room || !teacher) continue;
-          const disc = discs[Math.floor(rand() * discs.length)];
+          const free = discs.filter(d => !usedToday.has(d.id));
+          if (!free.length) continue;
+          const disc = free[Math.floor(rand() * free.length)];
           const made1 = place({ groupIds: [g.id], disciplineId: disc.id, kind,
             teacherIds: [teacher.id], roomId: room.id, weekday, slot, rule: WEEKLY() });
-          if (made1) made++;
+          if (made1) { made++; usedToday.add(disc.id); }
         }
       }
     }
@@ -284,22 +309,49 @@ export function buildSeed({ today, groupCount = null } = {}) {
     return dates.find(d => compareIso(d, wanted) >= 0) || dates.at(-1) || wanted;
   };
 
-  if (spoWed) {
+  /* Выбираем занятие, которое ДЕЙСТВИТЕЛЬНО идёт в нужный день.
+
+     Привязывать «замену сегодня» к заранее назначенной паре нельзя: показ
+     может прийтись на любой день недели, и если у группы в этот день этой
+     пары нет, замена уезжает на неделю вперёд — а на экране «Сегодня»
+     пусто. Поэтому ищем занятие по дню недели нужной даты. */
+  const lessonOnDay = (groupId, date, fallback) => {
+    const wd = weekdayOf(date);
+    const hit = state.lessons.find(l =>
+      l.published && l.groupIds.includes(groupId) && l.weekday === wd &&
+      expandOf(l).dates.includes(date));
+    return hit || fallback;
+  };
+
+  const subDate = t0;
+  const subLesson = lessonOnDay(G('11СПш-261'), subDate, spoWed);
+  if (subLesson) {
     // Подменяющий должен быть свободен в это время. Иначе замена сама
     // родит конфликт преподавателя, и на показе это выглядит как брак.
-    const sub = pick(teacherPool('u-ispo').filter(x => x.id !== spoWed.teacherIds[0]),
-      't:', spoWed.weekday, spoWed.slot, spoWed.groupIds[0]);
+    const sub = pick(teacherPool('u-ispo').filter(x => !subLesson.teacherIds.includes(x.id)),
+      't:', subLesson.weekday, subLesson.slot, subLesson.groupIds[0]);
     if (sub) {
       state.changes.push({
-        id: 'CH1', date: dateFor(spoWed, t0), lessonId: spoWed.id, type: 'teacher',
+        id: 'CH1', date: dateFor(subLesson, subDate), lessonId: subLesson.id, type: 'teacher',
         patch: { teacherIds: [sub.id] }, reason: 'больничный',
-        adminId: 'a-ispo', createdAt: `${t0}T08:12`,
+        adminId: 'a-ispo', createdAt: `${subDate}T08:12`,
       });
     }
   }
-  if (gaThu) {
+
+  /* Отмену ставим у ГА-251, а если завтра у неё пар нет — у любой группы ВО,
+     у которой они есть. Сценарий «отмена завтра» важнее конкретной группы:
+     без него на показе нечего показать на вкладке «Изменения». */
+  const cancelDate = addDays(t0, 1);
+  const cancelLesson = lessonOnDay(G('ГА-251'), cancelDate, null)
+    || state.groups
+        .filter(g => !g.synthetic)
+        .map(g => lessonOnDay(g.id, cancelDate, null))
+        .find(Boolean)
+    || gaThu;
+  if (cancelLesson) {
     state.changes.push({
-      id: 'CH2', date: dateFor(gaThu, addDays(t0, 1)), lessonId: gaThu.id, type: 'cancel',
+      id: 'CH2', date: dateFor(cancelLesson, cancelDate), lessonId: cancelLesson.id, type: 'cancel',
       patch: {}, reason: 'преподаватель на конференции',
       adminId: 'a-iest', createdAt: `${t0}T09:40`,
     });
