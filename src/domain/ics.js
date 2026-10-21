@@ -89,19 +89,18 @@ export function escapeText(s) {
  * с пробела. Режем по октетам UTF-8 и никогда посреди символа.
  */
 export function foldLine(line) {
-  const buf = Buffer.from(line, 'utf8');
-  if (buf.length <= 75) return line;
+  if (bytesOf(line) <= 75) return line;
 
   const out = [];
   let rest = line;
   let limit = 75;
 
-  while (Buffer.byteLength(rest, 'utf8') > limit) {
+  while (bytesOf(rest) > limit) {
     let cut = 0;
     let bytes = 0;
     // Идём по кодовым точкам, чтобы не разрубить ни букву, ни суррогатную пару.
     for (const ch of rest) {
-      const w = Buffer.byteLength(ch, 'utf8');
+      const w = bytesOf(ch);
       if (bytes + w > limit) break;
       bytes += w;
       cut += ch.length;
@@ -115,3 +114,8 @@ export function foldLine(line) {
 
   return out[0] + out.slice(1).map(s => CRLF + ' ' + s).join('');
 }
+
+/* Длина в октетах UTF-8. TextEncoder, а не Buffer: Buffer есть только в
+   Node, и в браузере на нём падала выгрузка календаря. */
+const encoder = new TextEncoder();
+function bytesOf(s) { return encoder.encode(s).length; }

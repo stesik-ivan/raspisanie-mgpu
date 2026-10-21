@@ -101,3 +101,17 @@ test('имя календаря попадает в X-WR-CALNAME', () => {
 function uid(ics) { return /UID:(.+)\r\n/.exec(ics)?.[1]; }
 function byteLen(s) { return Buffer.byteLength(s, 'utf8'); }
 function unfold(s) { return s.split('\r\n ').join(''); }
+
+/* В браузере нет Buffer — он есть только в Node. Тесты гонялись в Node и
+   этого не видели, а кнопка «Скачать .ics» на телефоне падала. */
+test('foldLine и buildIcs работают без Buffer, как в браузере', () => {
+  const saved = globalThis.Buffer;
+  globalThis.Buffer = undefined;
+  try {
+    const folded = foldLine('DESCRIPTION:' + 'я'.repeat(80));
+    assert.ok(folded.split('\r\n').every(l => new TextEncoder().encode(l).length <= 75));
+    assert.equal(foldLine('SUMMARY:Геология'), 'SUMMARY:Геология');
+  } finally {
+    globalThis.Buffer = saved;
+  }
+});
