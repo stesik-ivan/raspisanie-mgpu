@@ -43,10 +43,11 @@ export function arc({ progress = null, size = 96, width = 4, spin = false, title
    glyph: 'rest' — месяц (пар нет, можно выдохнуть), 'done' — галочка
    (всё сделано), 'none' — без значка. */
 const GLYPHS = {
-  // Месяц — круг минус смещённый круг (маской). Центр сдвинут вправо-вверх:
-  // у полумесяца «вес» слева внизу, и строго по центру он кажется съехавшим.
-  rest: '<mask id="em-moon"><rect width="100" height="100" fill="#fff"/><circle cx="58.5" cy="43" r="11" fill="#000"/></mask>'
-    + '<circle cx="52.5" cy="48" r="13" fill="var(--line)" mask="url(#em-moon)"/>',
+  // Месяц — круг минус смещённый круг (маской). Габариты полумесяца
+  // посчитаны так, чтобы его рамка стояла ровно в центре кольца:
+  // x от 37.3 до 62.7, y от 37.1 до 63.
+  rest: '<mask id="em-moon"><rect width="100" height="100" fill="#fff"/><circle cx="56.3" cy="45" r="11" fill="#000"/></mask>'
+    + '<circle cx="50.3" cy="50" r="13" fill="var(--line)" mask="url(#em-moon)"/>',
   done: '<path d="M40 50.5l7.5 7.5L61 43" fill="none" stroke="var(--text-2)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>',
   none: '',
 };

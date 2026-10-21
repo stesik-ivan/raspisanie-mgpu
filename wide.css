@@ -75,8 +75,9 @@
 
 /* Строки чередуются фоном — ряд «10:30» читается через всю неделю. */
 .wg-cell { display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: var(--r-m); min-height: 72px; }
-.wg-cell.is-odd, .wg-time.is-odd { background: color-mix(in srgb, var(--line-soft) 45%, transparent); }
-.wg-time.is-odd { border-radius: var(--r-m) 0 0 var(--r-m); }
+/* Время — подпись, без плашки: плашка со скруглением только слева
+   выглядела обрезанной. Полосы — только на клетках дней. */
+.wg-cell.is-odd { background: color-mix(in srgb, var(--line-soft) 45%, transparent); }
 /* Сегодняшний столбец — лёгкая подсветка, не красная рамка: рамкой в
    админке помечен конфликт, и её не должно быть в спокойном расписании. */
 .wg-cell.is-today { background: color-mix(in srgb, var(--accent) 7%, transparent); }
