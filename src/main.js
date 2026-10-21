@@ -1,9 +1,17 @@
-/* Точка входа. Поднимает оболочку, роутер и service worker.
-   Экраны подключаются по мере готовности — пока заглушки (Задача 1). */
+/* Точка входа: оболочка, роутер, service worker, онбординг. */
 
-import { initRouter, parseHash, transitionDir, prefersCalm } from './router.js';
-import { renderShell, setActiveTab, paint, rememberScroll, restoreScroll } from './ui/shell.js';
-import { emptyArc } from './ui/arc.js';
+import { initRouter, parseHash, transitionDir, prefersCalm, replace } from './router.js';
+import { renderShell, setActiveTab, rememberScroll, restoreScroll } from './ui/shell.js';
+import { initSheet, closeSheet } from './ui/sheet.js';
+import { spinner } from './ui/arc.js';
+import * as api from './data/api.js';
+import { humanError } from './data/errors.js';
+import { startOnboarding } from './views/student/onboarding.js';
+import { renderToday } from './views/student/today.js';
+import { renderWeek } from './views/student/week.js';
+import { renderChanges } from './views/student/changes.js';
+import { renderMore, applyTheme } from './views/student/more.js';
+import { openTeacherSheet, openRoomSheet } from './views/student/peek.js';
 
 const STUDENT_TABS = [
   { id: 'today',   label: 'Сегодня',   icon: 'today',   href: '#/today' },
@@ -12,41 +20,64 @@ const STUDENT_TABS = [
   { id: 'more',    label: 'Ещё',       icon: 'more',    href: '#/more' },
 ];
 
-/* Вторичные маршруты, которые подсвечивают чужую вкладку. */
-const TAB_ALIASES = { lesson: 'today', teacher: 'week', room: 'week' };
+const TAB_ALIASES = { lesson: 'today', teacher: 'week', room: 'week', setup: 'more' };
 
-const STUBS = {
-  today:   ['Сегодня', 'Лента пар на день'],
-  week:    ['Неделя', 'Расписание по дням'],
-  changes: ['Изменения', 'Замены, отмены и переносы'],
-  more:    ['Ещё', 'Группа, календарь, тема'],
+const VIEWS = {
+  today:   (host, args) => renderToday(host, { date: args[0] }),
+  week:    (host, args) => renderWeek(host, { date: args[0] }),
+  changes: (host) => renderChanges(host),
+  more:    (host) => renderMore(host),
 };
 
-function render() {
+let busy = false;
+
+async function render() {
   const { route, args, raw } = parseHash();
-  const dir = prefersCalm() ? null : transitionDir(route, args.length);
+  const host = document.querySelector('#view');
+
+  // Шторка не должна пережить смену экрана: иначе остаётся висеть поверх
+  // чужого содержимого и выглядит как зависание.
+  closeSheet();
+
+  const prefs = await api.getPrefs();
+  if (!prefs.onboarded || route === 'setup') {
+    document.querySelector('#tabbar').hidden = true;
+    document.querySelector('#sidebar').hidden = true;
+    return startOnboarding(() => { replace('#/today'); render(); });
+  }
+  document.querySelector('#tabbar').hidden = false;
+  document.querySelector('#sidebar').hidden = false;
 
   setActiveTab(route, TAB_ALIASES);
 
-  const [title, sub] = STUBS[route] || STUBS.today;
-  paint(`
-    <div class="page">
-      <header class="page-hdr">
-        <h1 class="page-title">${title}</h1>
-        <p class="page-sub">${sub}</p>
-      </header>
-      <div class="stub">
-        <div class="stub-arc">${emptyArc(96)}</div>
-        <p>Экран собирается. Каркас, шрифт, тёмная тема и переходы уже работают.</p>
-      </div>
-    </div>`, dir);
+  // Шторки-врезки поверх текущего экрана, а не вместо него.
+  if (route === 'teacher' && args[0]) { openTeacherSheet(args[0]); return; }
+  if (route === 'room' && args[0]) { openRoomSheet(args[0], args[1]); return; }
 
-  restoreScroll(raw);
+  const fn = VIEWS[route] || VIEWS.today;
+  const dir = prefersCalm() ? null : transitionDir(route, args.length);
+
+  host.classList.remove('v-fwd', 'v-back', 'v-up');
+  if (busy) return;
+  busy = true;
+  try {
+    await fn(host, args);
+    if (dir) { void host.offsetWidth; host.classList.add(dir); }
+    restoreScroll(raw);
+  } catch (err) {
+    console.error('main: экран не отрисовался', err);
+    host.innerHTML = `<div class="page"><div class="stub">
+      <p class="stub-title">Не удалось показать расписание</p>
+      <p>${humanError(err)}</p>
+      <button class="btn" onclick="location.reload()">Обновить</button>
+    </div></div>`;
+  } finally {
+    busy = false;
+  }
 }
 
 /* theme-color в метатеге не понимает var(), поэтому значение берём из
-   токена уже после загрузки стилей. Статическое значение в index.html —
-   запасной вариант на случай, если скрипт не дошёл. */
+   токена уже после загрузки стилей. Статика в index.html — запасной вариант. */
 function syncThemeColor() {
   try {
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
@@ -70,14 +101,36 @@ function registerServiceWorker() {
     .catch(err => console.warn('main: service worker не зарегистрирован', err));
 }
 
-function start() {
+function watchOffline() {
+  const show = () => {
+    const el = document.querySelector('#offline');
+    if (el) el.hidden = navigator.onLine;
+  };
+  addEventListener('online', show);
+  addEventListener('offline', show);
+  show();
+}
+
+async function start() {
+  document.querySelector('#view').innerHTML = `<div class="center-block">${spinner(44)}</div>`;
   syncThemeColor();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeColor);
+
+  try {
+    const prefs = await api.getPrefs();
+    applyTheme(prefs.theme);
+  } catch (err) {
+    console.warn('main: не применил тему', err);
+  }
+
   renderShell(STUDENT_TABS, { brand: 'Расписание' });
-  addEventListener('beforeunload', () => rememberScroll(parseHash().raw));
+  initSheet();
+  watchOffline();
+
   document.querySelector('#main')?.addEventListener('scroll', () => {
     rememberScroll(parseHash().raw);
   }, { passive: true });
+
   initRouter(render);
   registerServiceWorker();
 }
