@@ -195,7 +195,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--line); }
 .dot.is-off { background: var(--accent); }
 .dayline-day.is-today { box-shadow: inset 0 0 0 1.5px var(--accent); }
-.dayline-day.is-free { opacity: .55; }
+.dayline-day.is-free .dayline-dow, .dayline-day.is-free .dayline-num { color: var(--text-2); font-weight: var(--w-ui); }
 
 .week-list { display: flex; flex-direction: column; gap: 18px; }
 .week-day-head {
@@ -347,7 +347,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 }
 .chips-row::-webkit-scrollbar { display: none; }
 .fchip {
-  flex: 0 0 auto; min-height: 36px; padding: 0 14px;
+  flex: 0 0 auto; min-height: 44px; padding: 0 16px;
   border-radius: 999px; background: var(--surface);
   border: .5px solid var(--line-soft);
   font-size: 13.5px; font-weight: var(--w-ui); color: var(--text-2);
