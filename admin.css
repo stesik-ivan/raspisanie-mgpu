@@ -281,7 +281,7 @@
 .pub-diff { font-size: 13.5px; color: var(--text); display: flex; flex-direction: column; gap: 2px; }
 .pub-diff-label { color: var(--text-2); }
 .pub-was { color: var(--text-2); text-decoration: line-through; }
-.pub-foot { position: sticky; bottom: 0; padding: 16px 0 8px; background: var(--bg); display: flex; flex-direction: column; gap: 8px; }
+.pub-foot { padding: 16px 0 8px; display: flex; flex-direction: column; gap: 8px; }
 .pub-go { align-self: flex-start; }
 .pub-go:disabled { background: var(--line-soft); color: var(--text-2); cursor: not-allowed; }
 .pub-go.is-confirm { box-shadow: 0 0 0 2px var(--accent); }
@@ -297,3 +297,10 @@
 .log-group { width: auto; min-width: 160px; flex: 0 0 auto; }
 .log-title { font-size: 14px; font-weight: var(--w-ui); margin-top: 2px; }
 .log-body .pub-diff { margin-top: 4px; }
+
+/* Экспорт */
+.exp { margin-top: 28px; padding-top: 18px; border-top: .5px solid var(--line-soft); display: flex; flex-direction: column; gap: 10px; }
+.exp-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.exp-group { width: auto; min-width: 160px; }
+.exp-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (min-width: 900px) { .exp { max-width: 980px; } }

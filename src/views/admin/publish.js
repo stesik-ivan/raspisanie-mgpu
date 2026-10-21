@@ -13,6 +13,7 @@ import { toast } from '../../ui/toast.js';
 import { stamp, plural } from '../../ui/format.js';
 import { humanError } from '../../data/errors.js';
 import { listen } from '../../ui/listen.js';
+import { exportPanelHtml, bindExportPanel } from './export-panel.js';
 
 const KINDS = { new: 'Новое', changed: 'Изменено', deleted: 'Удалено' };
 // «Опубликовать 1 правку», но «в черновике 1 правка».
@@ -21,8 +22,9 @@ const pravki = (n) => `${n} ${plural(n, 'правка', 'правки', 'пра�
 
 export async function renderPublish(host) {
   host.innerHTML = `<div class="page"><div class="center-block">${spinner(44)}</div></div>`;
-  const view = await api.getPublishView();
+  const [view, index, admin] = await Promise.all([api.getPublishView(), api.getIndex(), api.getAdmin()]);
   const n = view.pending.length;
+  const groups = index.units.filter(u => admin?.unitIds?.includes(u.id)).flatMap(u => u.groups);
 
   host.innerHTML = `
     <div class="page pub-page">
@@ -51,7 +53,11 @@ export async function renderPublish(host) {
           <p class="stub-title">Всё опубликовано</p>
           <p>Правки из сетки появятся здесь и дойдут до студентов после публикации.</p>
         </div>`}
+
+      ${exportPanelHtml(groups)}
     </div>`;
+
+  bindExportPanel(host, groups, () => renderPublish(host));
 
   listen(host, 'click', (e) => {
     const btn = e.target.closest('[data-publish]');

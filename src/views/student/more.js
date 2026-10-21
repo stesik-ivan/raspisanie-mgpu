@@ -8,6 +8,7 @@ import { openSheet, closeSheet } from '../../ui/sheet.js';
 import { stamp, dayMonth } from '../../ui/format.js';
 import { isDemoTime } from '../../data/clock.js';
 import { listen } from '../../ui/listen.js';
+import { download } from '../../ui/download.js';
 
 export async function renderMore(host) {
   const [prefs, meta, index, ephemeral] = await Promise.all([
@@ -125,7 +126,7 @@ function bind(host) {
         const text = await api.getIcsForGroup(prefs.groupId);
         const index = await api.getIndex();
         const code = index.units.flatMap(u => u.groups).find(g => g.id === prefs.groupId)?.code || 'raspisanie';
-        download(`${code}.ics`, text);
+        download(`${code}.ics`, text, 'text/calendar;charset=utf-8');
         toast('Файл скачан — откройте его, чтобы добавить в календарь');
       } catch (err) {
         console.error('more: не собрал .ics', err);
@@ -181,13 +182,4 @@ export function applyTheme(theme) {
   const root = document.documentElement;
   if (theme === 'auto') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', theme);
-}
-
-function download(name, text) {
-  const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = name;
-  document.body.append(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
