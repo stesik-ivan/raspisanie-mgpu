@@ -125,7 +125,7 @@ input[type="date"], input[type="time"] {
   .sb-item:hover { background: var(--line-soft); color: var(--text); }
   /* Активный пункт — графитовая подложка, не красная заливка: красный
      по брендбуку только акцент, крупных красных площадей не делаем. */
-  .sb-item.on { background: var(--line-soft); color: var(--accent-text); }
+  .sb-item.on { background: color-mix(in srgb, var(--line-soft) 55%, var(--bg)); color: var(--accent-text); }
 
   #view > .page { max-width: 980px; margin: 0 auto; }
 }
