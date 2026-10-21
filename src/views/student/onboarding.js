@@ -133,7 +133,7 @@ const screens = {
       <h1 class="ob-title">Добавьте на экран</h1>
       <p class="ob-sub">Тогда расписание открывается как обычное приложение и работает без интернета.</p>
       <ol class="ob-steps">
-        <li><b>iPhone:</b> кнопка «Поделиться» внизу Safari ${icon('chevron')} «На экран «Домой»</li>
+        <li><b>iPhone:</b> кнопка «Поделиться» внизу Safari ${icon('chevron')} «На экран «Домой»»</li>
         <li><b>Android:</b> меню браузера ${icon('chevron')} «Установить приложение»</li>
       </ol>
       <div class="ob-actions">

@@ -105,3 +105,22 @@ test('изменение в чужом подразделении — отказ
   await assert.rejects(api.saveChange({ lessonId: o.lessonId, date: o.date, type: 'cancel' }),
     (e) => e instanceof ApiError && e.code === 'foreign');
 });
+
+/* Заменяющий преподаватель должен видеть пару, которую заменяет, а
+   заменённый — не видеть. Иначе в сцене 1 у 11СПш-261 «Замена: Тихонов»,
+   а у самого Тихонова в «Моих парах» этой пары нет. */
+test('замена на дату видна заменяющему и пропадает у заменённого', async () => {
+  const { o } = await plain();
+  const ctx = await api.getChangeContext(o.lessonId, o.date);
+  let sub = null;
+  for (const t of ctx.refs.teachers.filter(t => !o.teacherIds.includes(t.id))) {
+    const r = await api.checkChangeDraft({ lessonId: o.lessonId, date: o.date, type: 'teacher', patch: { teacherIds: [t.id] } });
+    if (!r.problems.length && !r.conflicts.some(c => c.level === 'error')) { sub = t; break; }
+  }
+  await api.saveChange({ lessonId: o.lessonId, date: o.date, type: 'teacher', patch: { teacherIds: [sub.id] } });
+
+  const mine = (await api.getDay({ teacherId: sub.id }, o.date)).lessons;
+  assert.ok(mine.some(x => x.lessonId === o.lessonId), 'заменяющий видит пару');
+  const was = (await api.getDay({ teacherId: o.teacherIds[0] }, o.date)).lessons;
+  assert.ok(!was.some(x => x.lessonId === o.lessonId), 'у заменённого пары нет');
+});

@@ -52,9 +52,16 @@ export function occurrencesOf(state, q = {}) {
   const ctx = domainCtx(state);
   // Студент видит опубликованные версии, админ — рабочие копии с черновиками.
   const source = q.includeDraft ? workingLessons(state.lessons) : publishedLessons(state.lessons);
+  // Преподаватель ведёт и то, где его поставили заменой на дату: такие
+  // занятия берём тоже, а после наложения изменений оставляем только
+  // вхождения, где он действительно ведёт. Иначе заменяющий не видит
+  // пару, а заменённый видит ту, на которую не придёт.
+  const subbing = new Set(q.teacherId ? (state.changes || [])
+    .filter(c => c.type === 'teacher' && (c.patch?.teacherIds || []).includes(q.teacherId))
+    .map(c => c.lessonId) : []);
   const lessons = source.filter(l =>
     (!q.groupId || l.groupIds.includes(q.groupId)) &&
-    (!q.teacherId || l.teacherIds.includes(q.teacherId)));
+    (!q.teacherId || l.teacherIds.includes(q.teacherId) || subbing.has(l.id)));
 
   const ids = new Set(lessons.map(l => l.id));
   const changes = (state.changes || []).filter(c =>
@@ -62,7 +69,8 @@ export function occurrencesOf(state, q = {}) {
     (c.type === 'extra' && matchesExtra(c, q)));
 
   const raw = lessons.flatMap(l => lessonOccurrences(l, ctx).occurrences);
-  return applyChanges(raw, changes, ctx);
+  const out = applyChanges(raw, changes, ctx);
+  return q.teacherId ? out.filter(o => o.teacherIds.includes(q.teacherId)) : out;
 }
 
 function matchesExtra(c, q) {
