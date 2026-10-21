@@ -5,7 +5,7 @@
 
 import * as api from '../../data/api.js';
 import { fuzzySearch, highlight, esc } from '../../ui/search.js';
-import { arc } from '../../ui/arc.js';
+import { logo } from '../../ui/logo.js';
 import { icon } from '../../ui/icons.js';
 import { toast } from '../../ui/toast.js';
 import { listen } from '../../ui/listen.js';
@@ -44,7 +44,7 @@ function render() {
 const screens = {
   hello: () => `
     <div class="ob-hello">
-      <img class="ob-logo" src="assets/logo/logo-ru-3.svg" alt="МГПУ" width="120" height="120">
+      ${logo('ru-3', { cls: 'ob-logo', alt: 'МГПУ', width: 120, height: 120 })}
       <h1 class="ob-title">Расписание МГПУ</h1>
       <p class="ob-sub">Институты и колледж в одном приложении</p>
       <div class="ob-actions">
@@ -129,7 +129,7 @@ const screens = {
 
   install: () => `
     <div class="ob-hello">
-      <div class="ob-arc">${arc({ progress: 1, size: 96, width: 3 })}</div>
+      ${logo('ru-3', { cls: 'ob-logo', alt: 'МГПУ', width: 120, height: 120 })}
       <h1 class="ob-title">Добавьте на экран</h1>
       <p class="ob-sub">Тогда расписание открывается как обычное приложение и работает без интернета.</p>
       <ol class="ob-steps">

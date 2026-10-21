@@ -241,3 +241,12 @@ input[type="date"], input[type="time"] {
 .arc { display: block; }
 .arc-spin { animation: arc-spin 1.1s linear infinite; }
 @keyframes arc-spin { to { transform: rotate(360deg); } }
+
+/* Логотип по теме: светлая версия на светлом фоне, инверсная — на тёмном. */
+.logo-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-light { display: none; }
+  :root:not([data-theme="light"]) .logo-dark { display: block; }
+}
+:root[data-theme="dark"] .logo-light { display: none; }
+:root[data-theme="dark"] .logo-dark { display: block; }

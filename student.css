@@ -60,7 +60,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .ob { padding: 0 16px calc(32px + var(--safe-b)); max-width: 560px; margin: 0 auto; }
 .ob-hello { text-align: center; padding: 8vh 0 0; }
 .ob-logo { margin: 0 auto 24px; }
-.ob-arc { display: grid; place-items: center; margin-bottom: 20px; }
 .ob-title { font-size: 30px; letter-spacing: -.02em; text-wrap: balance; }
 .ob-sub { color: var(--text-2); margin: 8px 0 32px; font-size: 16px; }
 .ob-actions { display: flex; flex-direction: column; gap: 10px; }

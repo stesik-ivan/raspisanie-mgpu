@@ -1,6 +1,7 @@
 /* Оболочка: таб-бар снизу на телефоне, сайдбар слева от 900px.
    Брейкпоинт и фикс safe-area — из «Полки» (`app.css:648`, `index.html:40`). */
 
+import { logo } from './logo.js';
 import { icon } from './icons.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -26,7 +27,7 @@ export function renderShell(tabs, opts = {}) {
 
   sidebar.innerHTML = `
     <a class="sb-brand" href="${tabs[0].href}">
-      <img class="sb-logo" src="assets/logo/logo-ru-1.svg" alt="" width="97" height="72">
+      ${logo('ru-1', { cls: 'sb-logo', width: 97, height: 72 })}
       <span class="sb-brand-text">${opts.brand || 'Расписание'}</span>
     </a>
     <nav class="sb-nav">

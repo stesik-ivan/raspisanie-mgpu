@@ -2,7 +2,7 @@
    Взят из «Полки» (~/Documents/BOT/boardgames/sw.js) с правкой стратегий
    под расписание: оболочка и данные ведут себя по-разному. */
 const SHELL = 'mgpu-shell-v1';   // html, css, js
-const STATIC = 'mgpu-static-v1'; // шрифты и логотипы — не меняются
+const STATIC = 'mgpu-static-v2'; // шрифты и логотипы; v2 — новая иконка приложения
 const DATA = 'mgpu-data-v1';     // расписание — меняется
 
 const FILES = [
