@@ -24,6 +24,9 @@
   text-align: left; min-height: 28px;
 }
 .link:active { opacity: .6; }
+/* Тап-зона 44px без изменения вёрстки: невидимое расширение вокруг. */
+.link, a.badge { position: relative; }
+.link::after, a.badge::after { content: ''; position: absolute; inset: -8px -4px; }
 
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
@@ -180,9 +183,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .week-title { flex: 1; font-size: 19px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 
 .dayline { display: flex; gap: 6px; margin-bottom: 16px; }
+.dayline > li { flex: 1; display: flex; min-width: 0; }
 .dayline-day {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  min-height: 62px; padding: 8px 2px; border-radius: var(--r-s);
+  min-height: 62px; min-width: 44px; padding: 8px 2px; border-radius: var(--r-s);
   background: var(--surface);
 }
 .dayline-dow { font-size: 11px; color: var(--text-2); text-transform: uppercase; }
@@ -248,7 +252,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .card .btn { margin-right: 8px; }
 
 .segmented { display: flex; gap: 4px; background: var(--line-soft); border-radius: var(--r-s); padding: 3px; }
-.seg { flex: 1; min-height: 38px; border-radius: 9px; font-size: 14px; font-weight: var(--w-ui); color: var(--text-2); }
+.seg { flex: 1; min-height: 44px; border-radius: 9px; font-size: 14px; font-weight: var(--w-ui); color: var(--text-2); }
 .seg.is-on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / .1); }
 
 /* ============ Шторка: содержимое ============ */
