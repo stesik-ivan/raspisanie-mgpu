@@ -46,7 +46,7 @@ const screens = {
     <div class="ob-hello">
       <img class="ob-logo" src="assets/logo/logo-ru-3.svg" alt="МГПУ" width="120" height="120">
       <h1 class="ob-title">Расписание МГПУ</h1>
-      <p class="ob-sub">Институты и колледж — в одном приложении</p>
+      <p class="ob-sub">Институты и колледж в одном приложении</p>
       <div class="ob-actions">
         <button class="btn btn-primary" data-role="student">Я студент</button>
         <button class="btn" data-role="teacher">Я преподаватель</button>
@@ -197,7 +197,7 @@ function bind(host) {
       try {
         await api.setPrefs({ ...draft, onboarded: true });
         if (await api.isEphemeral()) {
-          toast('Браузер не даёт сохранить выбор — он забудется при перезагрузке');
+          toast('Браузер не даёт сохранить выбор, после перезагрузки его придётся сделать заново');
         }
         step = 'done';
         onDone?.();

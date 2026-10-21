@@ -34,7 +34,7 @@ export function assertZone(s, admin, lesson) {
   if (foreign !== undefined) {
     const unit = s.units.find(u => u.id === foreign);
     throw new ApiError('foreign',
-      `Это расписание ведёт ${unit?.short || 'другое подразделение'}. Видеть его можно, править — только его администратору.`);
+      unit ? `Расписание ${unit.short} может править только администратор ${unit.short}.` : 'Это расписание ведёт другое подразделение, править его нельзя.');
   }
 }
 

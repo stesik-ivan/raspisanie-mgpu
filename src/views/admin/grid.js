@@ -5,20 +5,21 @@
    потому что пара ВО и урок СПО стоят под разными номерами, а пересекаются
    по времени.
 
-   Тап по ячейке открывает разбор: там конфликт решается в один тап. */
+   Нажатие на ячейку открывает разбор: там конфликт решается одним
+   нажатием. Саму таблицу рисует grid-table.js. */
 
 import * as api from '../../data/api.js';
 import { spinner, emptyArc } from '../../ui/arc.js';
 import { icon } from '../../ui/icons.js';
 import { esc } from '../../ui/search.js';
-import { rangeLabel, dowFull, dayMonth, kindName, shortDate } from '../../ui/format.js';
+import { rangeLabel } from '../../ui/format.js';
 import { today } from '../../data/clock.js';
-import { addDays, startOfWeek, weekdayOf } from '../../domain/dates.js';
+import { addDays, startOfWeek } from '../../domain/dates.js';
 import { openConflictSheet } from './conflict-sheet.js';
 import { openLessonForm } from './lesson-form.js';
+import { gridTable } from './grid-table.js';
 import { listen } from '../../ui/listen.js';
-
-const DAYS = [1, 2, 3, 4, 5, 6];
+import { dragScroll } from '../../ui/drag-scroll.js';
 
 let state = { unitId: null, course: null, weekFrom: null };
 
@@ -74,133 +75,31 @@ export async function renderGrid(host, { quiet = false } = {}) {
       </div>
 
       ${foreignNote(admin, grid)}
-      ${grid.groups.length ? table(grid, mine) : empty()}
-      ${legend()}
+      ${grid.groups.length ? gridTable(grid, mine) : empty()}
+      ${legend(mine)}
     </div>`;
 
-  if (quiet) { const w = host.querySelector('.g-wrap'); if (w) w.scrollLeft = scrollLeft; }
+  const wrap = host.querySelector('.g-wrap');
+  if (wrap) {
+    if (quiet) wrap.scrollLeft = scrollLeft;
+    dragScroll(wrap, { vertical: document.querySelector('#main') });
+  }
   bind(host, grid);
 }
 
 function foreignNote(admin, grid) {
   if (admin?.unitIds?.includes(grid.unit?.id)) return '';
-  return `<p class="notice">Это чужая зона. ${esc(grid.unit?.short || '')} ведёт другой администратор — расписание видно, править его нельзя.</p>`;
+  return `<p class="notice">Расписание ${esc(grid.unit?.short || '')} ведёт другой администратор. Смотреть можно, править нельзя.</p>`;
 }
 
-/* Колонки: группа, а если у неё есть подгруппы — по колонке на подгруппу.
-   Ровно так устроен файл учебной части: каждая группа занимает две колонки. */
-function columnsOf(groups) {
-  const cols = [];
-  for (const g of groups) {
-    if (g.subgroups?.length) {
-      for (const s of g.subgroups) cols.push({ groupId: g.id, code: g.code, subgroup: s });
-    } else {
-      cols.push({ groupId: g.id, code: g.code, subgroup: null });
-    }
-  }
-  return cols;
-}
-
-function table(grid, mine) {
-  const cols = columnsOf(grid.groups);
-  const idx = new Map(cols.map((c, i) => [`${c.groupId}|${c.subgroup ?? ''}`, i]));
-
-  let row = 2;                       // первая строка — шапка
-  const rows = [];
-  const placed = [];
-
-  for (const weekday of DAYS) {
-    const date = addDays(grid.from, weekday - 1);
-    rows.push(`<div class="g-day" style="grid-row:${row}" role="rowheader">
-      ${esc(dowFull(date))}<span class="sh-dim">${esc(shortDate(date))}</span></div>`);
-    row++;
-
-    for (const slot of grid.bells) {
-      rows.push(`<div class="g-time" style="grid-row:${row}">
-        <b>${slot.n}</b><span>${esc(slot.start)}</span><span class="sh-dim">${esc(slot.end)}</span></div>`);
-
-      const busy = new Set();
-      for (const cell of grid.cells.filter(c => c.date === date && c.slot === slot.n)) {
-        const span = spanOf(cell, cols, idx);
-        if (!span) continue;
-        for (let i = span[0]; i <= span[1]; i++) busy.add(i);
-        placed.push(cellBox(cell, span, row));
-      }
-      // Пустая клетка своей зоны — кнопка «добавить» с готовыми днём, парой
-      // и группой. В чужой зоне её нет: там можно только смотреть.
-      if (mine) {
-        cols.forEach((c, i) => {
-          if (busy.has(i)) return;
-          placed.push(`<button class="g-empty" style="grid-row:${row}; grid-column:${i + 2}"
-            data-new data-gid="${esc(c.groupId)}" data-sub="${esc(c.subgroup ?? '')}" data-wd="${weekday}" data-slot="${slot.n}" data-date="${date}"
-            aria-label="Добавить занятие: ${esc(c.code)}${c.subgroup ? `, подгруппа ${esc(c.subgroup)}` : ''}, ${esc(dowFull(date))}, ${slot.n} пара">${icon('plus')}</button>`);
-        });
-      }
-      row++;
-    }
-  }
-
-  return `
-    <div class="g-wrap">
-      <div class="g" style="grid-template-columns: 62px repeat(${cols.length}, minmax(128px, 1fr)); grid-template-rows: auto;">
-        <div class="g-corner" style="grid-row:1"></div>
-        ${cols.map((c, i) => `
-          <div class="g-col" style="grid-row:1; grid-column:${i + 2}">
-            <span class="g-col-code">${esc(c.code)}</span>
-            ${c.subgroup ? `<span class="g-col-sub">подгр. ${esc(c.subgroup)}</span>` : ''}
-          </div>`).join('')}
-        ${rows.join('')}
-        ${placed.join('')}
-      </div>
-    </div>`;
-}
-
-/* Поток занимает подряд идущие колонки своих групп — как объединённая
-   ячейка в Excel. Берём крайние и растягиваем между ними.
-   Возвращает [первая, последняя] колонки, считая от нуля. */
-function spanOf(cell, cols, idx) {
-  const hits = [];
-  for (const gid of cell.groupIds) {
-    if (cell.subgroup == null) {
-      cols.forEach((c, i) => { if (c.groupId === gid) hits.push(i); });
-    } else {
-      const i = idx.get(`${gid}|${cell.subgroup}`);
-      if (i != null) hits.push(i);
-    }
-  }
-  return hits.length ? [Math.min(...hits), Math.max(...hits)] : null;
-}
-
-function cellBox(cell, span, row) {
-  const from = span[0] + 2;
-  const to = span[1] + 3;
-
-  const err = cell.conflicts.some(c => c.level === 'error');
-  const warn = !err && cell.conflicts.length > 0;
-  const cls = [
-    'g-cell',
-    err ? 'is-error' : '',
-    warn ? 'is-warn' : '',
-    cell.published === false ? 'is-draft' : '',
-    cell.status === 'cancelled' ? 'is-cancelled' : '',
-  ].filter(Boolean).join(' ');
-
-  return `
-    <button class="${cls}" style="grid-row:${row}; grid-column:${from} / ${to}"
-      data-cell="${esc(cell.lessonId)}" data-cdate="${esc(cell.date)}">
-      <span class="g-cell-name">${esc(cell.discipline)}</span>
-      <span class="g-cell-meta">${esc(kindName(cell.kind))} · ${esc(cell.roomLabel)}</span>
-      <span class="g-cell-who">${cell.teachers.map(t => esc(t.fio)).join(', ')}</span>
-      ${cell.conflicts.length ? `<span class="g-cell-flag">${icon('warn')} ${err ? 'Конфликт' : 'Впритык'}</span>` : ''}
-    </button>`;
-}
-
-function legend() {
+function legend(mine) {
   return `
     <ul class="g-legend">
-      <li><span class="lg lg-error"></span>Конфликт — сохранить нельзя</li>
-      <li><span class="lg lg-warn"></span>Предупреждение — можно подтвердить</li>
-      <li><span class="lg lg-draft"></span>Черновик, не опубликован</li>
+      <li><span class="lg lg-error"></span>Конфликт: такое занятие нельзя сохранить</li>
+      <li><span class="lg lg-warn"></span>Предупреждение: сохранить можно, но лучше проверить</li>
+      <li><span class="lg lg-draft"></span>Черновик: студенты его пока не видят</li>
+      ${mine ? '<li class="lg-desk"><span class="lg lg-slot"></span>Пустая клетка: нажмите, чтобы добавить занятие</li>' : ''}
+      <li class="lg-desk">Сетку можно двигать мышью, зажав кнопку</li>
     </ul>`;
 }
 

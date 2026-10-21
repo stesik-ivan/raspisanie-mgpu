@@ -35,7 +35,7 @@ export async function renderAudit(host) {
   const shown = list.filter(a => (!who || a.adminId === who) && (!group || a.groupIds.includes(group)));
 
   host.innerHTML = `
-    <div class="page">
+    <div class="page wide-page">
       <header class="page-hdr">
         <h1 class="page-title">Журнал</h1>
         <p class="page-sub">${shown.length} ${plural(shown.length)} за последнюю неделю</p>
@@ -52,7 +52,9 @@ export async function renderAudit(host) {
         </select>
       </div>
 
-      ${shown.length ? `<ul class="log">${shown.map(row).join('')}</ul>` : `
+      ${shown.length ? `
+        <div class="log-head" aria-hidden="true"><span>Когда</span><span>Кто</span><span>Что</span><span>Было → стало</span></div>
+        <ul class="log">${shown.map(row).join('')}</ul>` : `
         <div class="stub stub-empty">
           <div class="stub-arc">${emptyArc(110)}</div>
           <p class="stub-title">Записей нет</p>
@@ -80,14 +82,14 @@ function row(a) {
         <b>${esc(stamp(a.at).split(', ')[1] || '')}</b>
         <span class="sh-dim">${esc(dowShort(date))} ${esc(stamp(a.at).split(', ')[0])}</span>
       </span>
-      <span class="log-body">
-        <span class="log-who">${esc(a.admin?.fio || a.adminId)}</span>
+      <span class="log-who">${esc(a.admin?.fio || a.adminId)}</span>
+      <span class="log-main">
         <span class="log-what">${esc(verb)} ${esc(ENTITIES[a.entity] || a.entity)}${a.note ? ` · ${esc(a.note)}` : ''}</span>
         ${a.title ? `<span class="log-title">${esc(a.title)}</span>` : ''}
-        ${a.details.length ? `<ul class="pub-diff">${a.details.map(d => `
-          <li><span class="pub-diff-label">${esc(d.label)}:</span>
-            ${d.from ? `<span class="pub-was">${esc(d.from)}</span> → ` : ''}<span>${esc(d.to)}</span></li>`).join('')}</ul>` : ''}
       </span>
+      <span class="log-diff">${a.details.length ? `<ul class="pub-diff">${a.details.map(d => `
+        <li><span class="pub-diff-label">${esc(d.label)}:</span>
+          ${d.from ? `<span class="pub-was">${esc(d.from)}</span> → ` : ''}<span>${esc(d.to)}</span></li>`).join('')}</ul>` : ''}</span>
     </li>`;
 }
 

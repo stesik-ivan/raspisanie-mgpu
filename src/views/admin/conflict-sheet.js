@@ -93,7 +93,7 @@ async function fillFreeRooms(el, cell, onChanged) {
             ? `<div class="room-picks">${free.map(r =>
                 `<button class="room-pick" data-room="${esc(r.id)}" data-room-name="${esc(r.name)}"
                   aria-label="Пересадить в ${esc(r.name)}">${esc(r.name)}</button>`).join('')}</div>
-               <p class="sh-text sh-dim">Тап — пересадить занятие. Аудитория сменится на всех его датах.</p>`
+               <p class="sh-text sh-dim">Выберите аудиторию, и занятие переедет в неё на всех своих датах.</p>`
             : `<ul class="date-chips">${free.map(r => `<li class="date-chip">${esc(r.name)}</li>`).join('')}</ul>
                <p class="sh-text sh-dim">Пересадить может администратор этого подразделения.</p>`}
       </section>`;

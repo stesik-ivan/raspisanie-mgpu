@@ -128,7 +128,7 @@ function options(list) {
 
 function slotChips(refs, date, current) {
   const slots = refs.bells[weekdayOf(date)] || [];
-  if (!slots.length) return '<p class="lf-hint">В этот день пар нет — выберите другой.</p>';
+  if (!slots.length) return '<p class="lf-hint">В этот день пар нет. Выберите другую дату.</p>';
   return slots.map(s => `<label class="lchip"><input class="vh" type="radio" name="moveSlot" value="${s.n}"${s.n === current ? ' checked' : ''}><span>${s.n} · ${esc(s.start)}</span></label>`).join('');
 }
 
@@ -178,7 +178,7 @@ function bind(el, data, onChanged) {
       const list = free.filter(r => r.id !== b.roomId).slice(0, 8);
       host.innerHTML = list.length
         ? list.map(r => `<button type="button" class="room-pick" data-pick-room="${esc(r.id)}" aria-label="Поставить в ${esc(r.name)}">${esc(r.name)}</button>`).join('')
-        : '<span class="lf-hint">Того же типа в этом корпусе свободных нет — выберите ниже.</span>';
+        : '<span class="lf-hint">Свободных аудиторий этого типа в корпусе нет. Выберите любую в списке ниже.</span>';
     } catch (err) {
       console.error('change-form: не нашёл свободные аудитории', err);
       host.innerHTML = '';

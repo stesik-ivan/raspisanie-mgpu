@@ -249,7 +249,7 @@ export async function getIcsForGroup(groupId) {
   const { occurrences } = await getGroupSchedule(groupId);
   return buildIcs(occurrences, {
     name: `Расписание ${group?.code || ''}`.trim(),
-    titleOf: (o) => `${o.discipline}${o.status === 'cancelled' ? ' — отменено' : ` (${o.kind})`}`,
+    titleOf: (o) => `${o.discipline}${o.status === 'cancelled' ? ' (отменено)' : ` (${o.kind})`}`,
     locationOf: (o) => o.roomLabel + (o.address ? `, ${o.address}` : ''),
     descriptionOf: (o) => o.teachers.map(t => `${t.fio}, ${t.position}`).join('; '),
   });

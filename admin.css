@@ -19,37 +19,71 @@
   align-items: stretch;
 }
 
-.g-corner { position: sticky; left: 0; z-index: 3; background: var(--bg); }
-
-.g-col {
-  position: sticky; top: 0; z-index: 2;
-  display: flex; flex-direction: column; gap: 1px;
-  padding: 8px 10px; border-radius: var(--r-s) var(--r-s) 0 0;
-  background: var(--surface);
-  text-align: center;
+/* Колонка времени закреплена слева. Липкий элемент прилипает к краю
+   содержимого, а не к краю прокрутки, поэтому слева остаётся полоса
+   отступа, а между строками — щели сетки. Ячейки, уезжая под колонку,
+   просвечивали бы и там, и там. Тени цвета фона закрывают щели (2px со
+   всех сторон, 4px справа) и полосу отступа слева (до 32px), тонкая
+   линия отделяет колонку от ячеек. */
+.g-time, .g-corner {
+  position: sticky; left: 0; z-index: 3;
+  background: var(--bg);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    4px 0 0 2px var(--bg),
+    -32px 0 0 2px var(--bg),
+    5px 0 0 2px var(--line-soft);
 }
-.g-col-code { font-size: 13.5px; font-weight: var(--w-head); }
-.g-col-sub { font-size: 11px; color: var(--text-2); }
-
-.g-day {
-  grid-column: 1 / -1;
-  display: flex; align-items: baseline; gap: 8px;
-  padding: 14px 4px 4px;
-  font-size: 12.5px; font-weight: var(--w-ui); color: var(--text-2);
-  text-transform: uppercase; letter-spacing: .05em;
-}
-.g-day .sh-dim { text-transform: none; letter-spacing: 0; }
-
 .g-time {
-  position: sticky; left: 0; z-index: 1;
   grid-column: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 6px 2px; border-radius: var(--r-s);
-  background: var(--bg);
+  padding: 6px 2px;
   font-size: 10.5px; color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
 .g-time b { font-size: 15px; color: var(--text); font-weight: var(--w-display); }
+
+/* Шапка: группа над своими подгруппами, как в файле учебной части.
+   Соседние группы разного оттенка — колонки не сливаются. */
+.g-group, .g-sub {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 10px; text-align: center;
+}
+.g-group { border-radius: var(--r-s) var(--r-s) 0 0; font-size: 14px; font-weight: var(--w-head); }
+.g-sub { font-size: 11.5px; font-weight: var(--w-ui); color: var(--text-2); }
+.g-group.band-0, .g-sub.band-0 { background: var(--surface); }
+.g-group.band-1, .g-sub.band-1 { background: color-mix(in srgb, var(--line-soft) 65%, var(--surface)); }
+
+.g-day {
+  grid-column: 1 / -1;
+  padding: 18px 0 6px;
+  border-bottom: 1px solid var(--line-soft);
+}
+/* Подпись дня едет вместе с колонкой времени, а не уезжает влево. */
+.g-day-label {
+  position: sticky; left: 0;
+  font-size: 12.5px; font-weight: var(--w-head); color: var(--text);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.g-day-label .sh-dim { text-transform: none; letter-spacing: 0; font-weight: var(--w-ui); }
+
+/* Пустая клетка — полоса цвета своей группы. */
+.g-slot { min-height: 62px; border-radius: 10px; display: grid; place-items: center; color: transparent; }
+.g-slot.band-0 { background: color-mix(in srgb, var(--surface) 40%, transparent); }
+.g-slot.band-1 { background: color-mix(in srgb, var(--line-soft) 70%, transparent); }
+.g-slot svg { width: 16px; height: 16px; }
+/* Добавлять занятие тапом по клетке — только с компьютера (docs/03). */
+.g-add-slot { pointer-events: none; }
+@media (min-width: 900px) {
+  .g-add-slot { pointer-events: auto; cursor: pointer; }
+  .g-add-slot:hover, .g-add-slot:focus-visible { background: var(--line-soft); color: var(--text-2); }
+}
+
+/* Перетаскивание мышью */
+@media (hover: hover) and (pointer: fine) {
+  .g-wrap { cursor: grab; user-select: none; }
+  .g-wrap.is-dragging, .g-wrap.is-dragging * { cursor: grabbing; }
+}
 
 .g-cell {
   display: flex; flex-direction: column; gap: 1px; align-items: flex-start;
@@ -60,6 +94,7 @@
   transition: transform .12s var(--ease), border-color .12s var(--ease);
 }
 .g-cell:hover { transform: translateY(-1px); }
+.g-cell-stream { margin-top: 2px; font-size: 10.5px; font-weight: var(--w-ui); color: var(--text-2); }
 .g-cell-name { font-size: 13px; font-weight: var(--w-ui); line-height: 1.25; overflow-wrap: anywhere; }
 .g-cell-meta, .g-cell-who { font-size: 11px; color: var(--text-2); line-height: 1.3; overflow-wrap: anywhere; }
 .g-cell-flag {
@@ -84,6 +119,9 @@
 }
 .g-legend li { display: flex; align-items: center; gap: 6px; }
 .lg { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid transparent; background: var(--surface); }
+.lg-slot { background: color-mix(in srgb, var(--line-soft) 70%, transparent); }
+.lg-desk { display: none !important; }
+@media (min-width: 900px) and (hover: hover) { .lg-desk { display: flex !important; } }
 .lg-error { border-color: var(--accent); }
 .lg-warn { border-style: dashed; border-color: var(--line); }
 .lg-draft { background: repeating-linear-gradient(135deg, var(--surface) 0 6px, var(--line-soft) 6px 8px); }
@@ -118,13 +156,11 @@
 .log-when { display: flex; flex-direction: column; font-variant-numeric: tabular-nums; }
 .log-when b { font-size: 14px; font-weight: var(--w-head); }
 .log-when .sh-dim { font-size: 11.5px; }
-.log-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .log-who { font-size: 14.5px; font-weight: var(--w-ui); }
 .log-what { font-size: 13px; color: var(--text-2); }
 
 @media (min-width: 900px) {
   .g-wrap { margin: 0; padding: 0 0 8px; }
-  .g-legend, .log { max-width: 980px; }
 }
 
 /* Пересадка в один тап: аудитории — кнопки, тап-зона 44px */
@@ -152,7 +188,10 @@
 }
 
 .lf { display: flex; flex-direction: column; gap: 18px; padding-bottom: 8px; }
-.lf-field { display: flex; flex-direction: column; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.lf-field { display: flex; flex-direction: column; gap: 10px; border: 0; margin: 0; padding: 0; min-width: 0; }
+/* legend в fieldset не участвует во flex и gap на него не действует —
+   без своего отступа подпись прилипает к кнопкам. */
+legend.lf-label { margin-bottom: 10px; }
 .lf-label { padding: 0; font-size: 13px; font-weight: var(--w-ui); color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
 .lf-note { text-transform: none; letter-spacing: 0; font-weight: var(--w-body); }
 .lf-input {
@@ -241,17 +280,6 @@
 .sh-acts { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 18px; }
 .sh-acts .btn { flex: 1 1 auto; }
 
-/* Пустая клетка сетки: добавить занятие. Только с компьютера — на телефоне
-   админка для просмотра и изменений на дату (docs/03). */
-.g-empty { display: none; }
-@media (min-width: 900px) {
-  .g-empty {
-    display: grid; place-items: center; min-height: 44px;
-    border-radius: 10px; color: transparent;
-  }
-  .g-empty svg { width: 16px; height: 16px; }
-  .g-empty:hover, .g-empty:focus-visible { background: var(--line-soft); color: var(--text-2); }
-}
 
 /* ============ Изменение на дату ============ */
 
@@ -289,18 +317,58 @@
 .pub-block-title { display: flex; align-items: center; gap: 6px; font-weight: var(--w-head); margin-bottom: 8px; }
 .pub-block-title svg { width: 18px; height: 18px; color: var(--accent-text); }
 .pub-block .cf-list { margin-bottom: 8px; }
-@media (min-width: 900px) { .pub-list, .pub-foot, .pub-block { max-width: 980px; } }
 
 /* Журнал: фильтры и «было → стало» */
 .log-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
 .log-filters .chips-row { flex: 1 1 auto; min-width: 0; }
 .log-group { width: auto; min-width: 160px; flex: 0 0 auto; }
 .log-title { font-size: 14px; font-weight: var(--w-ui); margin-top: 2px; }
-.log-body .pub-diff { margin-top: 4px; }
+.log-diff .pub-diff { margin-top: 4px; }
 
 /* Экспорт */
 .exp { margin-top: 28px; padding-top: 18px; border-top: .5px solid var(--line-soft); display: flex; flex-direction: column; gap: 10px; }
 .exp-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .exp-group { width: auto; min-width: 160px; }
 .exp-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-@media (min-width: 900px) { .exp { max-width: 980px; } }
+
+/* ============ Ширина страниц админки ============
+
+   Студенту хватает узкой колонки, админ работает за большим экраном.
+   Сетка — на всю ширину, иначе на широком мониторе она обрезается
+   по краям узкой полосы посередине. Журнал и публикация шире студенческих
+   экранов и раскладываются в колонки. */
+@media (min-width: 900px) {
+  #view > .page.grid-page { max-width: none; padding-left: 28px; padding-right: 28px; }
+  #view > .page.wide-page { max-width: 1320px; padding-left: 28px; padding-right: 28px; }
+  .grid-page .g-wrap { margin: 0 -28px; padding: 0 28px 8px; }
+}
+
+/* Журнал: на телефоне время слева, остальное столбиком; на компьютере —
+   таблица «когда · кто · что · было → стало». */
+.log-row { grid-template-areas: "when who" "when main" "when diff"; row-gap: 2px; column-gap: 12px; }
+.log-when { grid-area: when; }
+.log-who { grid-area: who; }
+.log-main { grid-area: main; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.log-diff { grid-area: diff; min-width: 0; }
+.log-diff:empty { display: none; }
+@media (min-width: 1100px) {
+  .log-row {
+    grid-template-columns: 84px 180px minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-areas: "when who main diff";
+    column-gap: 20px; align-items: start;
+  }
+  .log-diff .pub-diff { margin-top: 0; }
+  .log-head {
+    display: grid; grid-template-columns: 84px 180px minmax(0, 1.3fr) minmax(0, 1fr); column-gap: 20px;
+    padding: 0 2px 8px; border-bottom: .5px solid var(--line-soft);
+    font-size: 12px; font-weight: var(--w-ui); color: var(--text-2); text-transform: uppercase; letter-spacing: .04em;
+  }
+}
+.log-head { display: none; }
+@media (min-width: 1100px) { .log-head { display: grid; } }
+
+/* Публикация: правки слева, экспорт справа. */
+@media (min-width: 1200px) {
+  .pub-cols { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; align-items: start; }
+  .pub-cols .exp { margin-top: 8px; padding: 18px 20px; border: 0; border-radius: var(--r-l); background: var(--surface); position: sticky; top: 16px; }
+}

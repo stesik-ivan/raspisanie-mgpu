@@ -127,17 +127,16 @@ function expandRange(part, ctx, warnings) {
 
 function checkDate(iso, ctx, warnings) {
   if (ctx?.weekday && weekdayOf(iso) !== ctx.weekday) {
-    warnings.push(`${ru(iso)} — ${DOW[weekdayOf(iso)]}, а занятие стоит в ${DOW_IN[ctx.weekday]}`);
+    warnings.push(`${ru(iso)} выпадает на ${DOW_IN[weekdayOf(iso)]}, а занятие стоит в ${DOW_IN[ctx.weekday]}`);
   }
   if (ctx?.termFrom && compareIso(iso, ctx.termFrom) < 0) {
-    warnings.push(`${ru(iso)} — раньше начала семестра`);
+    warnings.push(`${ru(iso)} раньше начала семестра`);
   }
   if (ctx?.termTo && compareIso(iso, ctx.termTo) > 0) {
-    warnings.push(`${ru(iso)} — позже конца семестра`);
+    warnings.push(`${ru(iso)} позже конца семестра`);
   }
 }
 
-const DOW = [, 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье'];
 const DOW_IN = [, 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу', 'воскресенье'];
 
 /** '2026-10-22' → '22.10' — для сообщений человеку. */

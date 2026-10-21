@@ -27,13 +27,15 @@ export async function renderPublish(host) {
   const groups = index.units.filter(u => admin?.unitIds?.includes(u.id)).flatMap(u => u.groups);
 
   host.innerHTML = `
-    <div class="page pub-page">
+    <div class="page wide-page pub-page">
       <header class="page-hdr">
         <h1 class="page-title">Публикация</h1>
         <p class="page-sub">У студентов сейчас: ${view.terms.map(t =>
-          `${esc(t.unit)} — версия ${t.version}${t.publishedAt ? ` от ${esc(stamp(t.publishedAt))}` : ''}`).join(' · ')}</p>
+          `${esc(t.unit)}: версия ${t.version}${t.publishedAt ? ` от ${esc(stamp(t.publishedAt))}` : ''}`).join(' · ')}</p>
       </header>
 
+      <div class="pub-cols">
+      <div class="pub-main">
       ${view.blockers.length ? blockers(view.blockers) : ''}
 
       ${n ? `
@@ -45,16 +47,17 @@ export async function renderPublish(host) {
           <button class="btn btn-primary pub-go" data-publish${view.blockers.length ? ' disabled' : ''}>
             ${icon('publish')} Опубликовать ${esc(pravok(n))}</button>
           <p class="lf-hint">${view.blockers.length
-            ? 'Сначала решите конфликт — с ним опубликовать нельзя.'
-            : 'Студенты увидят сразу. Изменения на дату публикации не ждут: они уже у студентов.'}</p>
+            ? 'Пока конфликт не решён, опубликовать нельзя.'
+            : 'Студенты увидят правки сразу после публикации. Изменения на дату публиковать не нужно, они уже действуют.'}</p>
         </div>` : `
         <div class="stub stub-empty">
           <div class="stub-arc">${emptyArc(110)}</div>
           <p class="stub-title">Всё опубликовано</p>
           <p>Правки из сетки появятся здесь и дойдут до студентов после публикации.</p>
         </div>`}
-
+      </div>
       ${exportPanelHtml(groups)}
+      </div>
     </div>`;
 
   bindExportPanel(host, groups, () => renderPublish(host));

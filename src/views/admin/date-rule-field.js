@@ -47,7 +47,7 @@ export function dateRuleHtml(rule, term) {
       <div class="lf-ranges" data-ranges${f.every === 0 ? ' hidden' : ''}>
         ${f.ranges.map(r => rangeRow(r, term)).join('')}
         <button type="button" class="link lf-add" data-add-range>+ ещё диапазон</button>
-        <p class="lf-hint">«По» пустое — до конца семестра.</p>
+        <p class="lf-hint">Если дату «по» не заполнить, занятие пойдёт до конца семестра.</p>
       </div>
       <label class="lf-sub">
         <span class="lf-sub-label" data-list-label>${f.every === 0 ? 'Даты' : 'Ещё отдельные даты'}</span>

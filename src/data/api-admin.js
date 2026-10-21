@@ -72,7 +72,7 @@ export async function saveLesson(id, patch, { version = null } = {}) {
 
   assertZone(s, admin, before);
   if (version != null && version !== before.version) {
-    throw new ApiError('stale', 'Запись изменили, пока вы редактировали. Откройте занятие заново — там актуальная версия.');
+    throw new ApiError('stale', 'Запись изменили, пока вы редактировали. Откройте занятие заново, чтобы увидеть актуальную версию.');
   }
 
   const after = editLesson(before, patch, stamp());
@@ -268,7 +268,7 @@ export async function deleteLesson(id, { version = null } = {}) {
   const before = s.lessons[i];
   assertZone(s, admin, before);
   if (version != null && version !== before.version) {
-    throw new ApiError('stale', 'Запись изменили, пока вы редактировали. Откройте занятие заново — там актуальная версия.');
+    throw new ApiError('stale', 'Запись изменили, пока вы редактировали. Откройте занятие заново, чтобы увидеть актуальную версию.');
   }
 
   const after = removeLesson(before, stamp());

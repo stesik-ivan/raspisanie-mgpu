@@ -85,7 +85,7 @@ function formHtml(l, refs, isEdit) {
       </fieldset>
 
       <fieldset class="lf-field">
-        <legend class="lf-label">Группы <span class="lf-note">несколько — поток</span></legend>
+        <legend class="lf-label">Группы <span class="lf-note">если выбрать несколько, получится поток</span></legend>
         <div class="lf-chips">${refs.groups.map(g => chip('checkbox', 'group', g.id, g.code, l.groupIds.includes(g.id))).join('')}</div>
       </fieldset>
 

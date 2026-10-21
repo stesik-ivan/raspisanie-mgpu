@@ -30,7 +30,7 @@ export async function renderMore(host) {
         <h1 class="page-title">Ещё</h1>
       </header>
 
-      ${ephemeral ? `<p class="notice notice-warn">Браузер не даёт сохранять настройки — выбор группы забудется при перезагрузке. Обычно так бывает в приватном режиме.</p>` : ''}
+      ${ephemeral ? `<p class="notice notice-warn">Браузер не даёт сохранять настройки, поэтому выбор группы забудется при перезагрузке. Обычно так бывает в приватном режиме.</p>` : ''}
 
       ${forAdmin ? '' : `
       <section class="card">
@@ -70,7 +70,7 @@ export async function renderMore(host) {
         <h2 class="card-title">Администратор</h2>
         <p class="card-sub">${forAdmin
           ? 'Вы вошли как ' + esc(admin?.fio || '') + '. Зона: ' + esc(adminUnits)
-          : 'В демо вход без пароля. В боевой версии — учётная запись в системе университета.'}</p>
+          : 'В демо вход без пароля. В рабочей версии администратор будет входить под своей учётной записью университета.'}</p>
         <button class="btn${forAdmin ? '' : ' btn-primary'}" data-act="${forAdmin ? 'admin-out' : 'admin-in'}">
           ${forAdmin ? 'Выйти из админки' : 'Войти как администратор'}
         </button>
@@ -127,7 +127,7 @@ function bind(host) {
         const index = await api.getIndex();
         const code = index.units.flatMap(u => u.groups).find(g => g.id === prefs.groupId)?.code || 'raspisanie';
         download(`${code}.ics`, text, 'text/calendar;charset=utf-8');
-        toast('Файл скачан — откройте его, чтобы добавить в календарь');
+        toast('Файл скачан. Откройте его, чтобы добавить пары в календарь');
       } catch (err) {
         console.error('more: не собрал .ics', err);
         toast('Не удалось собрать календарь');
@@ -138,9 +138,9 @@ function bind(host) {
     if (act === 'ics-help') {
       openSheet({ title: 'Подписка на календарь', html: `
         <ol class="sh-steps">
-          <li><b>iPhone.</b> Скачайте файл и откройте его — iOS предложит добавить события в календарь.</li>
+          <li><b>iPhone.</b> Скачайте файл и откройте его, iOS сама предложит добавить события в календарь.</li>
           <li><b>Android.</b> Скачайте файл и откройте через «Google Календарь» ${icon('chevron')} «Импорт».</li>
-          <li>В боевой версии вместо файла будет постоянная ссылка: календарь станет обновляться сам, когда учебная часть внесёт изменения.</li>
+          <li>Позже вместо файла будет постоянная ссылка, и календарь станет обновляться сам, когда учебная часть внесёт изменения.</li>
         </ol>` });
       return;
     }

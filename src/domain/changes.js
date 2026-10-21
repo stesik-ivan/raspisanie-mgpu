@@ -59,7 +59,7 @@ export function validateChange(ch, occ) {
   if (ch.type === 'move') {
     if (!isIso(p.date)) out.push({ field: 'date', message: 'Выберите дату переноса' });
     else if (!Number.isInteger(p.slot)) out.push({ field: 'slot', message: 'Выберите пару' });
-    else if (p.date === occ.date && p.slot === occ.slot) out.push({ field: 'date', message: 'Перенос на то же время — не перенос' });
+    else if (p.date === occ.date && p.slot === occ.slot) out.push({ field: 'date', message: 'Новое время совпадает со старым' });
   }
   return out;
 }

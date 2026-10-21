@@ -48,8 +48,8 @@ export const GROUPS = [
 export const BUILDINGS = [
   { id: 'b-ch1', code: 'Ч-1', address: 'ул. Чечулина, д. 1' },
   { id: 'b-ch3', code: 'Ч-3', address: 'ул. Чечулина, д. 3, корп. 1' },
-  { id: 'b-sh',  code: 'Ш-2', address: 'ул. Шереметьевская, д. 29 — адрес для демо', demo: true },
-  { id: 'b-vt',  code: 'В-1', address: 'Витебская ул., д. 7 — адрес для демо', demo: true },
+  { id: 'b-sh',  code: 'Ш-2', address: 'ул. Шереметьевская, д. 29 (адрес для демо)', demo: true },
+  { id: 'b-vt',  code: 'В-1', address: 'Витебская ул., д. 7 (адрес для демо)', demo: true },
 ];
 
 function rooms() {
