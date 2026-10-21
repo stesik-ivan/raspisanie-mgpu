@@ -292,7 +292,18 @@ export async function getAudit({ limit = 50 } = {}) {
   return state.audit.slice(0, limit).map(a => ({
     ...a,
     admin: state.admins.find(x => x.id === a.adminId) || null,
+    label: auditLabel(a),
   }));
+}
+
+/* Человеческая подпись объекта журнала: «Геология, ГОБЩ-261» вместо L8.
+   На показе спросят «а что это за L8», и ответить нечего. */
+function auditLabel(a) {
+  if (a.entity === 'Term') return '';
+  const l = state.lessons.find(x => x.id === a.entityId);
+  if (!l) return '';
+  const groups = l.groupIds.map(id => ctx.groupOf(id)?.code).filter(Boolean).join(', ');
+  return [ctx.disciplineName(l.disciplineId), groups].filter(Boolean).join(' · ');
 }
 
 export async function getMeta() {

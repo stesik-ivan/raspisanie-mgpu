@@ -12,6 +12,8 @@ const ACTIONS = {
 const ENTITIES = {
   Lesson: 'занятие', Change: 'изменение на дату', Term: 'расписание семестра',
 };
+// «изменил изменение на дату» читается как опечатка — для замен свои глаголы.
+const CHANGE_VERBS = { create: 'внёс', update: 'поправил', delete: 'снял' };
 
 let who = null;
 
@@ -57,8 +59,8 @@ function row(a) {
       </span>
       <span class="log-body">
         <span class="log-who">${esc(a.admin?.fio || a.adminId)}</span>
-        <span class="log-what">${esc(ACTIONS[a.action] || a.action)} ${esc(ENTITIES[a.entity] || a.entity)}
-          <span class="sh-dim">${esc(a.entityId)}</span></span>
+        <span class="log-what">${esc((a.entity === 'Change' && CHANGE_VERBS[a.action]) || ACTIONS[a.action] || a.action)} ${esc(ENTITIES[a.entity] || a.entity)}
+          ${a.label ? `<span class="sh-dim">${esc(a.label)}</span>` : ''}</span>
       </span>
     </li>`;
 }
