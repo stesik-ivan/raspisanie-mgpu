@@ -208,15 +208,20 @@ export function freeRooms(occurrences, ctx, q) {
  * Сворачивает повторы: недельное занятие в занятой аудитории даёт конфликт
  * на каждую дату, а человеку нужна одна строка и список дат. Повтором
  * считается тот же тип конфликта с тем же вторым занятием.
- * Сообщение берётся у ближайшей даты. Ошибки идут раньше предупреждений.
+ * Сообщение берётся у самой ранней даты, а с from — у ближайшей не раньше
+ * from. Ошибки идут раньше предупреждений.
  * @returns {object[]} конфликты с полем dates
  */
-export function groupConflicts(conflicts) {
+export function groupConflicts(conflicts, { from = null } = {}) {
   const groups = new Map();
   for (const c of [...(conflicts || [])].sort((x, y) => x.date.localeCompare(y.date))) {
     const key = [c.level, c.type, c.a?.lessonId, c.b?.lessonId ?? ''].join('|');
     if (!groups.has(key)) groups.set(key, { ...c, dates: [] });
-    groups.get(key).dates.push(c.date);
+    const g = groups.get(key);
+    g.dates.push(c.date);
+    // С from текст берётся у ближайшей даты не раньше неё: конфликт
+    // 2 сентября админу уже неинтересен, 21 октября — очень.
+    if (from && g.date < from && c.date >= from) Object.assign(g, { ...c, dates: g.dates });
   }
   return [...groups.values()].sort((x, y) =>
     (x.level === 'error' ? 0 : 1) - (y.level === 'error' ? 0 : 1) || x.date.localeCompare(y.date));

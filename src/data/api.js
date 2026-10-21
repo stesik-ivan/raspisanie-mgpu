@@ -21,6 +21,7 @@ import { decorator } from './decorate.js';
 
 export * from './api-admin.js';
 export * from './api-changes.js';
+export * from './api-publish.js';
 
 /* Состояние живёт в session.js. Здесь к нему обращаются через st()/cx(),
    чтобы чтение и запись (api-admin.js) видели одно и то же. */
@@ -183,7 +184,8 @@ export async function getGridView({ unitId, course = null, weekFrom = today() })
         })),
       };
     }),
-    draftCount: st().lessons.filter(l => !l.published).length,
+    // Счётчик — по своему подразделению: чужие черновики публикует не этот админ.
+    draftCount: st().lessons.filter(l => l.published === false && l.groupIds.some(g => ids.has(g))).length,
   };
 }
 

@@ -15,6 +15,7 @@ import { openTeacherSheet, openRoomSheet } from './views/student/peek.js';
 import { renderRooms } from './views/teacher/rooms.js';
 import { renderGrid } from './views/admin/grid.js';
 import { renderAudit } from './views/admin/audit.js';
+import { renderPublish } from './views/admin/publish.js';
 
 const STUDENT_TABS = [
   { id: 'today',   label: 'Сегодня',   icon: 'today',   href: '#/today' },
@@ -33,12 +34,13 @@ const TEACHER_TABS = [
   { id: 'more',  label: 'Ещё',      icon: 'more',  href: '#/more' },
 ];
 
-/* Админ в демо входит кнопкой в «Ещё». Сетка — на просмотр: форма ввода
-   и публикация следующим этапом, и обещать их вкладкой нечестно. */
+/* Админ в демо входит кнопкой в «Ещё». Правит в сетке, публикует на
+   отдельной вкладке: студенты видят только опубликованное. */
 const ADMIN_TABS = [
-  { id: 'grid',  label: 'Сетка',  icon: 'grid',    href: '#/grid' },
-  { id: 'audit', label: 'Журнал', icon: 'changes', href: '#/audit' },
-  { id: 'more',  label: 'Ещё',    icon: 'more',    href: '#/more' },
+  { id: 'grid',    label: 'Сетка',      icon: 'grid',    href: '#/grid' },
+  { id: 'audit',   label: 'Журнал',     icon: 'changes', href: '#/audit' },
+  { id: 'publish', label: 'Публикация', icon: 'publish', href: '#/publish' },
+  { id: 'more',    label: 'Ещё',        icon: 'more',    href: '#/more' },
 ];
 
 const TAB_ALIASES = { lesson: 'today', teacher: 'week', room: 'week', setup: 'more', changes: 'today' };
@@ -50,6 +52,7 @@ const VIEWS = {
   rooms:   (host) => renderRooms(host),
   grid:    (host) => renderGrid(host),
   audit:   (host) => renderAudit(host),
+  publish: (host) => renderPublish(host),
   more:    (host) => renderMore(host),
 };
 

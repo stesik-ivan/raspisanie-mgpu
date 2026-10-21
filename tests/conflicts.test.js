@@ -319,3 +319,15 @@ test('orientConflict разворачивает конфликт к нужном
   assert.match(toY.message, /занята: ГШТ-261, Геология/);
   assert.equal(orientConflict(c, 'X', ctx), c);
 });
+
+test('groupConflicts с from берёт текст ближайшей даты не раньше from', () => {
+  const a = (date) => occ({ lessonId: 'X', date, start: '10:30', end: '11:50', groupIds: ['g-sht'], teacherIds: ['t1'] });
+  const b = (date) => occ({ lessonId: 'Y', date, start: '10:40', end: '11:25', groupIds: ['g-spo'], teacherIds: ['t2'] });
+  const dates = ['2026-09-02', '2026-10-21', '2026-10-28'];
+  const list = findConflicts(dates.flatMap(d => [a(d), b(d)]), ctx);
+  const [g] = groupConflicts(list, { from: '2026-10-21' });
+  assert.equal(g.date, '2026-10-21');
+  assert.match(g.message, /21\.10/);
+  assert.equal(g.dates.length, 3, 'даты все, текст — про ближайшую');
+  assert.equal(groupConflicts(list, { from: '2027-01-01' })[0].date, '2026-09-02', 'если всё прошло — самая ранняя');
+});

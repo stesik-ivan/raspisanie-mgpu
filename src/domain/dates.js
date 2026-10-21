@@ -180,3 +180,22 @@ export function parseDayList(text, term) {
 export function formatDayList(list) {
   return (list || []).map(ru).join(', ');
 }
+
+/**
+ * Правило дат словами: «каждую неделю с 09.09 по 28.10; с 11.11 по 23.12,
+ * кроме 04.11». Так его пишет учебная часть — так и показываем в журнале.
+ */
+export function ruleText(rule) {
+  const parts = rule?.parts || [];
+  if (!parts.length) return '—';
+  const ranges = parts.filter(p => p.type === 'range');
+  const list = parts.filter(p => p.type === 'dates').flatMap(p => p.list || []);
+  const chunks = [];
+  if (ranges.length) {
+    const step = ranges[0].everyWeeks === 2 ? 'через неделю' : 'каждую неделю';
+    chunks.push(`${step} ${ranges.map(r => `с ${ru(r.from)}${r.to ? ` по ${ru(r.to)}` : ''}`).join('; ')}`);
+  }
+  if (list.length) chunks.push(formatDayList([...new Set(list)].sort(compareIso)));
+  const except = rule.except?.length ? `, кроме ${formatDayList(rule.except)}` : '';
+  return chunks.join(' и ') + except;
+}

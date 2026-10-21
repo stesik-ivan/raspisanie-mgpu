@@ -267,3 +267,26 @@
 .cf-target:empty { display: none; }
 .cf-target { font-size: 14.5px; font-weight: var(--w-ui); }
 .room-pick[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: transparent; }
+
+/* ============ Публикация ============ */
+
+.pub-sect { margin-top: 8px; }
+.pub-list { display: flex; flex-direction: column; }
+.pub-item { display: flex; flex-direction: column; gap: 4px; padding: 12px 2px; border-bottom: .5px solid var(--line-soft); }
+.pub-kind { font-size: 12px; font-weight: var(--w-ui); text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); }
+.pub-kind-new { color: var(--text); }
+.pub-kind-deleted { color: var(--accent-text); }
+.pub-title { font-size: 15px; font-weight: var(--w-ui); }
+.pub-title.is-deleted { text-decoration: line-through; color: var(--text-2); }
+.pub-diff { font-size: 13.5px; color: var(--text); display: flex; flex-direction: column; gap: 2px; }
+.pub-diff-label { color: var(--text-2); }
+.pub-was { color: var(--text-2); text-decoration: line-through; }
+.pub-foot { position: sticky; bottom: 0; padding: 16px 0 8px; background: var(--bg); display: flex; flex-direction: column; gap: 8px; }
+.pub-go { align-self: flex-start; }
+.pub-go:disabled { background: var(--line-soft); color: var(--text-2); cursor: not-allowed; }
+.pub-go.is-confirm { box-shadow: 0 0 0 2px var(--accent); }
+.pub-block { margin: 8px 0 16px; }
+.pub-block-title { display: flex; align-items: center; gap: 6px; font-weight: var(--w-head); margin-bottom: 8px; }
+.pub-block-title svg { width: 18px; height: 18px; color: var(--accent-text); }
+.pub-block .cf-list { margin-bottom: 8px; }
+@media (min-width: 900px) { .pub-list, .pub-foot, .pub-block { max-width: 980px; } }

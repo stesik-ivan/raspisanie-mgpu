@@ -148,3 +148,19 @@ test('formatDayList — обратно в «07.09, 21.09»', () => {
   assert.equal(formatDayList(['2026-09-07', '2026-09-21']), '07.09, 21.09');
   assert.equal(formatDayList([]), '');
 });
+
+import { ruleText } from '../src/domain/dates.js';
+
+/* Правило дат словами — для журнала и списка правок: «было → стало». */
+test('ruleText пересказывает правило так, как его пишет учебная часть', () => {
+  assert.equal(ruleText({ parts: [{ type: 'range', from: '2026-09-01', to: '2026-12-30', everyWeeks: 1 }], except: ['2026-11-04'] }),
+    'каждую неделю с 01.09 по 30.12, кроме 04.11');
+  assert.equal(ruleText({ parts: [{ type: 'range', from: '2026-09-08', to: null, everyWeeks: 2 }], except: [] }),
+    'через неделю с 08.09');
+  assert.equal(ruleText({ parts: [{ type: 'dates', list: ['2026-09-07', '2026-09-21'] }], except: [] }), '07.09, 21.09');
+  assert.equal(ruleText({ parts: [
+    { type: 'range', from: '2026-09-09', to: '2026-10-28', everyWeeks: 1 },
+    { type: 'range', from: '2026-11-11', to: '2026-12-23', everyWeeks: 1 },
+  ], except: [] }), 'каждую неделю с 09.09 по 28.10; с 11.11 по 23.12');
+  assert.equal(ruleText(null), '—');
+});

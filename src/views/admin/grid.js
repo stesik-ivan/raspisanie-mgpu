@@ -53,7 +53,7 @@ export async function renderGrid(host, { quiet = false } = {}) {
           <p class="page-sub">${esc(grid.unit?.name || '')} · ${esc(rangeLabel(grid.from, grid.to))}</p>
         </div>
         <div class="grid-head-actions">
-          ${grid.draftCount ? `<span class="badge badge-accent">Неопубликованных: ${grid.draftCount}</span>` : ''}
+          ${grid.draftCount ? `<a class="badge badge-accent" href="#/publish">Неопубликованных: ${grid.draftCount}</a>` : ''}
           ${mine ? `<button class="btn btn-primary g-add" data-add>${icon('plus')} Занятие</button>` : ''}
           <button class="icon-btn" data-wk="-1" aria-label="Предыдущая неделя">${icon('back')}</button>
           <button class="badge badge-ghost" data-wk="today">Эта неделя</button>

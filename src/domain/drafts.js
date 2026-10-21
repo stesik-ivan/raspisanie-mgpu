@@ -126,3 +126,33 @@ export function validateLesson(l) {
   need(l?.dateRule?.parts?.length, 'dateRule', 'Задайте даты: диапазон или список');
   return out;
 }
+
+/**
+ * Публикация: черновики, для которых inScope(l) истинно, становятся
+ * опубликованными, удалённые — исчезают. Остальное не трогается: чужие
+ * черновики публикует их администратор.
+ * @param {object[]} lessons
+ * @param {(l:object)=>boolean} inScope
+ */
+export function publishLessons(lessons, inScope) {
+  return (lessons || []).flatMap(l => {
+    if (l.published !== false || !inScope(l)) return [l];
+    if (l.deleted) return [];
+    const { pub, ...rest } = structuredClone(l);
+    return [{ ...rest, published: true }];
+  });
+}
+
+/**
+ * Что ждёт публикации: новое, изменённое (с разницей), удалённое.
+ * @returns {{id:string, kind:'new'|'changed'|'deleted', lesson:object, before:object|null, diff:object[]}[]}
+ */
+export function pendingOf(lessons, inScope) {
+  return (lessons || [])
+    .filter(l => l.published === false && inScope(l))
+    .map(l => {
+      const kind = l.deleted ? 'deleted' : l.pub ? 'changed' : 'new';
+      const before = l.pub || null;
+      return { id: l.id, kind, lesson: l, before, diff: kind === 'changed' ? lessonDiff(before, l) : [] };
+    });
+}

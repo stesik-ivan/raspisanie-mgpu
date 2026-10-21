@@ -219,7 +219,7 @@ export async function checkLessonDraft(draft, { lessonId = null } = {}) {
   const problems = problemsOf(s, ctx, lesson);
   const cand = applyChanges(occurrences, s.changes.filter(c => c.lessonId === lesson.id), ctx);
   const existing = occurrencesOf(s, { includeDraft: true });
-  const conflicts = groupConflicts(checkLesson(cand, existing, ctx));
+  const conflicts = groupConflicts(checkLesson(cand, existing, ctx), { from: today() });
 
   let freeRooms = [];
   if (conflicts.some(c => c.type === 'room' && c.level === 'error')) {

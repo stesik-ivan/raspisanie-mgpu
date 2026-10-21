@@ -21,6 +21,12 @@ export function unitIdOfGroup(s, groupId) {
   return s.programs.find(p => p.id === g?.programId)?.unitId || null;
 }
 
+/** Занятие в зоне админа: все его группы — в его подразделениях. */
+export function inZone(s, admin, lesson) {
+  return !!admin && (lesson.groupIds || []).length > 0 &&
+    lesson.groupIds.every(g => admin.unitIds.includes(unitIdOfGroup(s, g)));
+}
+
 /** Все группы занятия должны быть в зоне админа: поток с чужой группой — чужой. */
 export function assertZone(s, admin, lesson) {
   if (!admin) throw new ApiError('foreign', 'Войдите как администратор, чтобы править расписание.');

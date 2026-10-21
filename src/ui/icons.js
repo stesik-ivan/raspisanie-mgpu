@@ -21,6 +21,7 @@ const ICONS = {
   back: S('<path d="M15 5l-7 7 7 7"/>'),
   close: S('<path d="M6 6l12 12M18 6L6 18"/>'),
   plus: S('<path d="M12 5v14M5 12h14"/>'),
+  publish: S('<path d="M12 15V4M12 4l-4 4M12 4l4 4"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>'),
   search: S('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/>'),
   chevron: S('<path d="M9 5l7 7-7 7"/>'),
   warn: S('<path d="M12 3.5 2.8 19.5h18.4L12 3.5Z"/><path d="M12 9.5v4.5"/><circle cx="12" cy="16.8" r="1" fill="currentColor" stroke="none"/>'),

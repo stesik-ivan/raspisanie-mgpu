@@ -143,3 +143,35 @@ test('тот же состав групп и преподавателей в д�
   assert.equal(e.version, 1);
   assert.deepEqual(e.groupIds, ['g2', 'g1'], 'порядок остаётся прежним: первая группа задаёт сетку звонков');
 });
+
+import { publishLessons, pendingOf } from '../src/domain/drafts.js';
+
+/* Публикация: черновики своей зоны становятся тем, что видят студенты.
+   Чужие черновики не трогаем — их публикует их администратор. */
+test('publishLessons: правки и новые — опубликованы, удалённые — убраны, чужие не тронуты', () => {
+  const clean = { ...base(), id: 'A' };
+  const edited = editLesson({ ...base(), id: 'B' }, { roomId: 'r-212' }, 'a');
+  const fresh = newLesson(fields(), { id: 'C', termId: 't', at: 'a' });
+  const gone = removeLesson({ ...base(), id: 'D' }, 'a');
+  const foreign = newLesson({ ...fields(), groupIds: ['g-other'] }, { id: 'E', termId: 't', at: 'a' });
+  const mine = (l) => l.groupIds.includes('g1');
+
+  const out = publishLessons([clean, edited, fresh, gone, foreign], mine);
+  assert.deepEqual(out.map(l => l.id), ['A', 'B', 'C', 'E']);
+  const b = out.find(l => l.id === 'B');
+  assert.equal(b.published, true);
+  assert.equal(b.pub, undefined);
+  assert.equal(b.roomId, 'r-212');
+  assert.equal(out.find(l => l.id === 'C').published, true);
+  assert.equal(out.find(l => l.id === 'E').published, false, 'чужой черновик остался черновиком');
+  assert.deepEqual(publishedLessons(out).find(l => l.id === 'B').roomId, 'r-212', 'студент видит новую версию');
+});
+
+test('pendingOf: что ждёт публикации и чем оно стало', () => {
+  const edited = editLesson({ ...base(), id: 'B' }, { roomId: 'r-212' }, 'a');
+  const fresh = newLesson(fields(), { id: 'C', termId: 't', at: 'a' });
+  const gone = removeLesson({ ...base(), id: 'D' }, 'a');
+  const list = pendingOf([{ ...base(), id: 'A' }, edited, fresh, gone], () => true);
+  assert.deepEqual(list.map(p => [p.id, p.kind]), [['B', 'changed'], ['C', 'new'], ['D', 'deleted']]);
+  assert.deepEqual(list[0].diff, [{ field: 'roomId', from: 'r-133', to: 'r-212' }]);
+});
