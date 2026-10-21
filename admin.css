@@ -75,8 +75,8 @@
 .g-cell.is-warn { border-style: dashed; border-color: var(--line); }
 .g-cell.is-warn .g-cell-flag { color: var(--text-2); }
 .g-cell.is-draft { background: repeating-linear-gradient(135deg, var(--surface) 0 8px, var(--line-soft) 8px 10px); }
-.g-cell.is-cancelled { opacity: .55; }
-.g-cell.is-cancelled .g-cell-name { text-decoration: line-through; }
+.g-cell.is-cancelled { background: var(--line-soft); }
+.g-cell.is-cancelled .g-cell-name { text-decoration: line-through; color: var(--text-2); }
 
 .g-legend {
   display: flex; flex-wrap: wrap; gap: 16px;
@@ -88,7 +88,9 @@
 .lg-warn { border-style: dashed; border-color: var(--line); }
 .lg-draft { background: repeating-linear-gradient(135deg, var(--surface) 0 6px, var(--line-soft) 6px 8px); }
 
-.fchip.is-foreign { opacity: .72; }
+/* Чужое подразделение — только просмотр; приглушаем цветом, не прозрачностью:
+   прозрачность роняла контраст ниже 4,5. */
+.fchip.is-foreign { border-style: dashed; }
 .fchip.is-foreign svg { width: 12px; height: 12px; display: inline; vertical-align: -2px; }
 
 /* Разбор конфликта */
