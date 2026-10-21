@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Расписание занятий МГПУ — демо для руководства",
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test",
     "serve": "node serve.mjs"
   }
 }
