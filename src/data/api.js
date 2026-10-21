@@ -20,11 +20,17 @@ import { today, now, nowMinutes } from './clock.js';
 let state = null;
 let ctx = null;
 
+/* День показа. Сид привязывает замену к «сегодня», и если открыть демо
+   накануне (как советует сценарий), замена уехала бы на 21.10, а на показе
+   22.10 «Сегодня» осталось бы без неё. Раньше этой даты не якорим. */
+const DEMO_DAY = '2026-10-22';
+const seedDay = () => { const t = today(); return t < DEMO_DAY ? DEMO_DAY : t; };
+
 function ensure() {
   if (state) return state;
   state = loadState();
   if (!state.lessons?.length) {
-    state = { ...buildSeed({ today: today() }), prefs: state.prefs, ephemeral: state.ephemeral };
+    state = { ...buildSeed({ today: seedDay() }), prefs: state.prefs, ephemeral: state.ephemeral };
     saveState(state);
   }
   ctx = domainCtx(state);
@@ -274,7 +280,7 @@ export async function isEphemeral() { ensure(); return state.ephemeral === true;
 export async function resetDemo() {
   const prefs = state?.prefs;
   clearState();
-  state = buildSeed({ today: today() });
+  state = buildSeed({ today: seedDay() });
   if (prefs) state.prefs = prefs;
   commit();
   await tick();
