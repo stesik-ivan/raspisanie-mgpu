@@ -58,7 +58,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .ob-hello { text-align: center; padding: 8vh 0 0; }
 .ob-logo { margin: 0 auto 24px; }
 .ob-arc { display: grid; place-items: center; margin-bottom: 20px; }
-.ob-title { font-size: 30px; letter-spacing: -.02em; }
+.ob-title { font-size: 30px; letter-spacing: -.02em; text-wrap: balance; }
 .ob-sub { color: var(--text-2); margin: 8px 0 32px; font-size: 16px; }
 .ob-actions { display: flex; flex-direction: column; gap: 10px; }
 .ob-actions .btn { width: 100%; }
@@ -95,8 +95,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   border: 0; background: none; font: inherit; color: inherit;
   font-weight: var(--w-ui);
 }
+/* Собственный контур у поля убран, потому что подсвечивается вся строка
+   поиска целиком — иначе рамка и контур рисовались бы друг на друге. */
 .searchbar-input:focus { outline: none; }
-.searchbar:focus-within { border-color: var(--accent); }
+.searchbar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
 
 .ob-group-head { font-size: 13px; font-weight: var(--w-ui); color: var(--text-2); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
 .ob-chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -120,7 +125,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .day-head { padding: 8px 0 14px; }
 .day-nav { display: flex; align-items: center; gap: 4px; }
 .day-head-text { flex: 1; min-width: 0; text-align: center; }
-.day-title { font-size: 20px; letter-spacing: -.02em; }
+.day-title { font-size: 20px; letter-spacing: -.02em; text-wrap: balance; }
 .day-sub { font-size: 13.5px; color: var(--text-2); font-weight: var(--w-ui); margin-top: 2px; }
 .day-badges { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
 
@@ -143,7 +148,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
 .lesson-ring { position: absolute; top: 10px; right: 10px; }
 .lesson-body { min-width: 0; }
-.lesson-name { font-size: 16.5px; letter-spacing: -.01em; }
+/* Названия вроде «Основы безопасности и защиты Родины» не должны распирать
+   карточку на узком экране. */
+.lesson-name { font-size: 16.5px; letter-spacing: -.01em; overflow-wrap: anywhere; text-wrap: pretty; }
 .lesson-kind { font-size: 13px; color: var(--text-2); font-weight: var(--w-ui); margin-top: 1px; }
 .lesson-where, .lesson-who { font-size: 13.5px; color: var(--text-2); margin-top: 6px; }
 .lesson-where { display: flex; align-items: center; gap: 5px; }
@@ -202,7 +209,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 }
 .week-row-time { font-size: 14.5px; font-weight: var(--w-head); font-variant-numeric: tabular-nums; }
 .week-row-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.week-row-name { font-size: 15.5px; font-weight: var(--w-ui); }
+.week-row-name { font-size: 15.5px; font-weight: var(--w-ui); overflow-wrap: anywhere; }
 .week-row-sub, .week-row-who { font-size: 13px; color: var(--text-2); }
 .week-row.is-cancelled { opacity: .62; }
 .week-row.is-cancelled .week-row-time, .week-row.is-cancelled .week-row-name { text-decoration: line-through; }
@@ -254,7 +261,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .sh-title { flex: 1; font-size: 18px; letter-spacing: -.02em; }
 .sh-close { display: grid; place-items: center; width: var(--tap); height: var(--tap); border-radius: 50%; color: var(--text-2); }
 .sh-close svg { width: 18px; height: 18px; }
-.sh-body { overflow-y: auto; padding: 16px 20px 24px; -webkit-overflow-scrolling: touch; }
+.sh-body {
+  overflow-y: auto; padding: 16px 20px 24px; -webkit-overflow-scrolling: touch;
+  /* Без contain прокрутка шторки до края начинает тянуть страницу под ней. */
+  overscroll-behavior: contain;
+}
 .sh-loading { padding: 32px; }
 .sh-empty, .sh-text { color: var(--text-2); font-size: 14.5px; }
 .sh-empty { text-align: center; padding: 24px 0; }

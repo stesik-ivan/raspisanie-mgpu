@@ -99,12 +99,18 @@ async function render() {
     host.innerHTML = `<div class="page"><div class="stub">
       <p class="stub-title">Не удалось показать расписание</p>
       <p>${humanError(err)}</p>
-      <button class="btn" onclick="location.reload()">Обновить</button>
+      <button class="btn" data-reload>Обновить</button>
     </div></div>`;
   } finally {
     busy = false;
   }
 }
+
+/* Кнопка «Обновить» на экране ошибки. Обработчик, а не inline onclick:
+   атрибут выполняется как код из разметки и первым ломается под CSP. */
+addEventListener('click', (e) => {
+  if (e.target.closest('[data-reload]')) location.reload();
+});
 
 /* theme-color в метатеге не понимает var(), поэтому значение берём из
    токена уже после загрузки стилей. Статика в index.html — запасной вариант. */

@@ -24,6 +24,9 @@ body {
   color: var(--text);
   /* Двойной тап лечим здесь, а не запретом масштабирования в метатеге. */
   touch-action: manipulation;
+  /* Без этого iOS на каждый тап по карточке рисует серую вспышку во всю её
+     площадь. Свои состояния :active у нас есть, подсказка браузера лишняя. */
+  -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
@@ -138,6 +141,17 @@ input[type="date"], input[type="time"] {
 @keyframes fade-up    { from { opacity: 0; transform: translateY(6px); } }
 
 /* ============ Шторка ============ */
+
+/* Ссылка для клавиатуры: первым Tab'ом уводит к содержимому, минуя вкладки. */
+.skip-link {
+  position: absolute; left: 8px; top: -100px; z-index: 100;
+  padding: 10px 16px; border-radius: var(--r-s);
+  background: var(--surface); color: var(--text);
+  font-size: 14px; font-weight: var(--w-ui);
+  box-shadow: 0 4px 16px rgb(0 0 0 / .2);
+  transition: top .16s var(--ease);
+}
+.skip-link:focus { top: 8px; }
 
 #sheet-layer { position: fixed; inset: 0; z-index: 60; }
 #sheet-backdrop {

@@ -104,7 +104,7 @@ function card(o, live, forTeacher) {
         </div>
         <div class="lesson-ring">${running ? arc({ progress, size: 44, width: 3 }) : ''}</div>
         <div class="lesson-body">
-          <h3 class="lesson-name">${esc(o.discipline)}</h3>
+          <h2 class="lesson-name">${esc(o.discipline)}</h2>
           <p class="lesson-kind">${esc(kindName(o.kind))}</p>
           <p class="lesson-where">
             ${o.isOnline ? icon('online') : icon('pin')}
